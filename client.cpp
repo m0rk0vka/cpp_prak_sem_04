@@ -7,7 +7,23 @@
 #include <string.h>
 #include <string>
 
-using namespace std;
+void manual()
+{
+    std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "Description of the model language:" << std::endl;
+    std::cout << "SQL-sentence    ::= SELECT or INSERT or UPDATE or DELETE or CREATE or DROP sentence" << std::endl;
+    std::cout << "SELECT-sentence ::= SELECT <list of fields> FROM <table name> <WHERE-clause>" << std::endl;
+    std::cout << "INSERT-sentence ::= INSERT INTO <table name> (<field value> {, <field value> })" << std::endl;
+    std::cout << "UPDATE-sentence ::= UPDATE <table name> SET <field name> = <expression> <WHERE-clause>" << std::endl;
+    std::cout << "DELETE-sentence ::= DELETE FROM <table name> <WHERE-clause>" << std::endl;
+    std::cout << "CREATE-sentence ::= CREATE TABLE <table name> ( <list of fields definitions> )" << std::endl;
+    std::cout << "DROP-sentence   ::= DROP TABLE <table name>" << std::endl;
+    std::cout << std::endl;
+    std::cout << "List of fields definitions syntax: <field definition> { , <field definition> }" << std::endl;
+    std::cout << "Field definition syntax: <field name> <field type>" << std::endl;
+    std::cout << "Field type syntax: TEXT ( <unsigned long long> ) | LONG" << std::endl;
+    std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+}
 
 int main()
 {
@@ -15,12 +31,13 @@ int main()
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
     {
-        return 1;
+        std::cerr << "Can't create socket" << std::endl;
+        exit(0);
     }
 
     //  Create a hint structure for the server we're connecting with
     int port = 54000;
-    string ipAddress = "127.0.0.1";
+    std::string ipAddress = "127.0.0.1";
 
     sockaddr_in hint;
     hint.sin_family = AF_INET;
@@ -31,24 +48,33 @@ int main()
     int connectRes = connect(sock, (sockaddr*)&hint, sizeof(hint));
     if (connectRes == -1)
     {
-        return 1;
+        std::cerr << "Can't connect to the server" << std::endl;
+        exit(0);
     }
 
     //  While loop:
     char buf[4096];
-    string userInput;
+    std::string userInput;
 
-
+    std::cout << "Hello! Now you can work with database." << std::endl;
+    std::cout << "Print \"man\" to see manual. Print \"quit\" to quit the program. " << std::endl;
     do {
         //      Enter lines of text
-        cout << "> ";
-        getline(cin, userInput);
-
+        std::cout << "> ";
+        getline(std::cin, userInput);
+        if (userInput == "quit") {
+            exit(0);
+        }
+        if (userInput == "man") {
+            manual();
+            userInput.clear();
+            continue;
+        }
         //      Send to server
         int sendRes = send(sock, userInput.c_str(), userInput.size() + 1, 0);
         if (sendRes == -1)
         {
-            cout << "Could not send to server! Whoops!\r\n";
+            std::cerr << "Could not send to server! Whoops!\r\n";
             continue;
         }
 
@@ -57,12 +83,12 @@ int main()
         int bytesReceived = recv(sock, buf, 4096, 0);
         if (bytesReceived == -1)
         {
-            cout << "There was an error getting response from server\r\n";
+            std::cerr << "There was an error getting response from server\r\n";
         }
         else
         {
             //      Display response
-            cout << "SERVER> " << string(buf, bytesReceived) << "\r\n";
+            std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";
         }
     } while(true);
 
