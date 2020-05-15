@@ -3,7 +3,7 @@
 #include <vector>
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
-    TEXT, LONG, END, IDENT};
+    TEXT, LONG, EQUALLY, OPEN, CLOSE, END, IDENT};
 
 bool isal_num(int c){
     return isalnum(c) || c == '_';
@@ -16,11 +16,8 @@ namespace lexer {
 
     void init() {
         c = std::cin.get();
-        /*while (c == ' ') {
-            c = std::cin.get();
-        }*/
         if (c == EOF || c == '\n') {
-            throw std::logic_error("Empty request!");
+            throw std::logic_error("Empty request");
         }
         cur_lex_pos = 1;
     }
@@ -30,7 +27,7 @@ namespace lexer {
         enum state_t { H, S, SE, SEL, SELE, SELEC, SELECT, I, IN, INS, INSE, INSER, INSERT,
             U, UP, UPD, UPDA, UPDAT, UPDATE, D, DE, DEL, DELE, DELET, DELETE, C, CR, CRE,
             CREA, CREAT, CREATE, DR, DRO, DROP, F, FR, FRO, FROM, INT, INTO, SET, T, TA, TAB,
-            TABL, TABLE, TE, TEX, TEXT, L, LO, LON, LONG, IDENT, OK } state = H;
+            TABL, TABLE, TE, TEX, TEXT, L, LO, LON, LONG, EQUALLY, OPEN, CLOSE, IDENT, OK } state = H;
         while (state != OK) {
             switch (state) {
             case H:
@@ -54,6 +51,12 @@ namespace lexer {
                     state = L;
                 } else if (isalpha(c) || c == '_') {
                     state = IDENT;
+                } else if (c == '(') {
+                    state = OPEN;
+                } else if (c == ')') {
+                    state = CLOSE;
+                } else if (c == '=') {
+                    state = EQUALLY;
                 } else if (c == '\n') {
                     cur_lex_type = lex_type_t::END;
                     state = OK;
@@ -189,7 +192,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::SELECT;
+                    cur_lex_type = lex_type_t::INSERT;
                     state = OK;
                 }
                 break;
@@ -383,7 +386,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::SELECT;
+                    cur_lex_type = lex_type_t::CREATE;
                     state = OK;
                 }
                 break;
@@ -626,6 +629,18 @@ namespace lexer {
                     state = OK;
                 }
                 break;
+//          OPEN&CLOSE&EQUALLY
+            case OPEN:
+                cur_lex_type = lex_type_t::OPEN;
+                state = OK;
+                break;
+            case CLOSE:
+                cur_lex_type = lex_type_t::CLOSE;
+                state = OK;
+                break;
+            case EQUALLY:
+                cur_lex_type = lex_type_t::EQUALLY;
+                break;
 //          OK
             case OK:
                 break;
@@ -640,5 +655,154 @@ namespace lexer {
                 ++cur_lex_pos;
             }
         }
+    }
+}
+
+namespace parser{
+
+    void init() {
+        lexer::init();
+        lexer::next();
+    }
+
+    void check_end() {
+        if (lexer::cur_lex_type != lex_type_t::END){
+            throw std::logic_error("No end");
+        }
+    }
+
+    void S();
+    void I();
+    void U();
+    void DE();
+    void C();
+    void DR();
+
+    void H() {
+        if (lexer::cur_lex_type == lex_type_t::SELECT) {
+            lexer::next();
+            S();
+        } else if (lexer::cur_lex_type == lex_type_t::INSERT) {
+            lexer::next();
+            I();
+        } else if (lexer::cur_lex_type == lex_type_t::UPDATE) {
+            lexer::next();
+            U();
+        } else if (lexer::cur_lex_type == lex_type_t::DELETE) {
+            lexer::next();
+            DE();
+        } else if (lexer::cur_lex_type == lex_type_t::CREATE) {
+            lexer::next();
+            C();
+        } else if (lexer::cur_lex_type == lex_type_t::DROP) {
+            lexer::next();
+            DR();
+        } else {
+            throw std::logic_error("No words \"SELECT|INSERT|UPDATE|DELETE|CREATE|DROP\" at the start");
+        }
+    }
+
+    void S(){
+        //obrabotka field list
+        if (lexer::cur_lex_type != lex_type_t::FROM) {
+            throw std::logic_error("No word \"FROM\" after field list");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
+        //WHERE-clause
+    }
+
+    void I(){
+        if (lexer::cur_lex_type != lex_type_t::INTO) {
+            throw std::logic_error("No word \"INTO\" after \"INSERT\"");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::OPEN) {
+            throw std::logic_error("No \"(\" before field value");
+        }
+        lexer::next();
+        //obrabotka field value
+        if (lexer::cur_lex_type != lex_type_t::CLOSE) {
+            throw std::logic_error("No \")\" after field value");
+        }
+        lexer::next();
+    }
+
+    void U(){
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::SET) {
+            throw std::logic_error("No word \"SET\" after table name");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad field name");
+        }
+        //zapisat' field name
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::EQUALLY) {
+            throw std::logic_error("No \"=\" after field name");
+        }
+        lexer::next();
+        //vyrashenie
+        //WHERE-clause
+    }
+
+    void DE(){
+        if (lexer::cur_lex_type != lex_type_t::FROM) {
+            throw std::logic_error("No word \"FROM\" after \"DELETE\"");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
+        //WHERE-clause
+    }
+
+    void C(){
+        if (lexer::cur_lex_type != lex_type_t::TABLE) {
+            throw std::logic_error("No word \"TABLE\" after \"CREATE\"");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::OPEN) {
+            throw std::logic_error("No \"(\" before field description list");
+        }
+        lexer::next();
+        //obrabotka field description list
+        if (lexer::cur_lex_type != lex_type_t::CLOSE) {
+            throw std::logic_error("No \")\" after field description list");
+        }
+        lexer::next();
+    }
+
+    void DR(){
+        if (lexer::cur_lex_type != lex_type_t::TABLE) {
+            throw std::logic_error("No word \"TABLE\" after \"DROP\"");
+        }
+        lexer::next();
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("Bad table name");
+        }
+        //zapisat' table name
+        lexer::next();
     }
 }

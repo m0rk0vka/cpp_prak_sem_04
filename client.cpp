@@ -4,8 +4,8 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-//#include <string.h>
 #include <string>
+#include <string.h>
 #include "parser.h"
 
 void manual()
@@ -62,8 +62,10 @@ int main()
     std::cout << "Print \"man\" to see manual. Print \"quit\" to quit the program. " << std::endl;
     do {
         //      Enter lines of text
-        std::cout << "> ";
-        getline(std::cin, userInput);
+        //std::cout << "> ";
+        /*
+        userInput.clear();
+        std::getline(std::cin, userInput);
         if (userInput == "quit") {
             exit(0);
         }
@@ -75,21 +77,23 @@ int main()
         //      clear cin to parser
         for (unsigned int i = 0; i < userInput.size() + 1; ++i) {
             std::cin.unget();
-        }
-        userInput.clear();
+        }*/
+
         //      parser work
         try {
+            std::cout << "new line" << std::endl;
             parser::init();
             parser::H();
+            parser::check_end();
         }
         catch (const std::logic_error& e){
             std::cerr << "Wrong input! Error mesage: " << e.what() << "!" << std::endl;
             std::cerr << "Read manual using \"man\" and write again your request!" << std::endl;
-            /*if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
+            if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
             {
                 std::cin.clear(); //clears the error flag on cin
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // skips to the next newline
-            }*/
+            }
             continue;
         }
         //      Send to server
