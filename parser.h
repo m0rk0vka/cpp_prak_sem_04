@@ -1,6 +1,4 @@
-#include <iostream>
-#include <string>
-#include <vector>
+#include "struct.h"
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, EQUALLY, OPEN, CLOSE, END, IDENT};
