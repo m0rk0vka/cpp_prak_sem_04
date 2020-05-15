@@ -1,4 +1,4 @@
-#include "struct.h"
+#include "structs.h"
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, EQUALLY, OPEN, CLOSE, END, IDENT};
@@ -657,10 +657,23 @@ namespace lexer {
 }
 
 namespace parser{
+    std::string request_type;
+    struct_select request_select;
+    struct_insert request_insert;
+    struct_update request_update;
+    struct_delete request_delete;
+    struct_create request_create;
+    struct_drop request_drop;
 
     void init() {
         lexer::init();
         lexer::next();
+        request_select.clear();
+        request_insert.clear();
+        request_update.clear();
+        request_delete.clear();
+        request_create.clear();
+        request_drop.clear();
     }
 
     void check_end() {
@@ -678,21 +691,27 @@ namespace parser{
 
     void H() {
         if (lexer::cur_lex_type == lex_type_t::SELECT) {
+            request_type = "SELECT";
             lexer::next();
             S();
         } else if (lexer::cur_lex_type == lex_type_t::INSERT) {
+            request_type = "INSERT";
             lexer::next();
             I();
         } else if (lexer::cur_lex_type == lex_type_t::UPDATE) {
+            request_type = "UPDETE";
             lexer::next();
             U();
         } else if (lexer::cur_lex_type == lex_type_t::DELETE) {
+            request_type = "DELETE";
             lexer::next();
             DE();
         } else if (lexer::cur_lex_type == lex_type_t::CREATE) {
+            request_type = "CREATE";
             lexer::next();
             C();
         } else if (lexer::cur_lex_type == lex_type_t::DROP) {
+            request_type = "DROP";
             lexer::next();
             DR();
         } else {
@@ -709,7 +728,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_select.name = lexer::cur_lex_text;
         lexer::next();
         //WHERE-clause
     }
@@ -722,7 +741,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_insert.name = lexer::cur_lex_text;
         lexer::next();
         if (lexer::cur_lex_type != lex_type_t::OPEN) {
             throw std::logic_error("No \"(\" before field value");
@@ -739,7 +758,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_update.name = lexer::cur_lex_text;
         lexer::next();
         if (lexer::cur_lex_type != lex_type_t::SET) {
             throw std::logic_error("No word \"SET\" after table name");
@@ -766,7 +785,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_delete.name = lexer::cur_lex_text;
         lexer::next();
         //WHERE-clause
     }
@@ -779,7 +798,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_create.name = lexer::cur_lex_text;
         lexer::next();
         if (lexer::cur_lex_type != lex_type_t::OPEN) {
             throw std::logic_error("No \"(\" before field description list");
@@ -800,7 +819,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
-        //zapisat' table name
+        request_drop.name = lexer::cur_lex_text;
         lexer::next();
     }
 }

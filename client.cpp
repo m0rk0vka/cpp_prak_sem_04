@@ -97,11 +97,59 @@ int main()
             continue;
         }
         //      Send to server
-        int sendRes = send(sock, userInput.c_str(), userInput.size() + 1, 0);
-        if (sendRes == -1)
-        {
-            std::cerr << "Could not send to server! Whoops!\r\n";
-            continue;
+        try {
+            if (parser::request_type == "SELECT") {
+                int len_table_name = parser::request_select.name.size();
+                int sendRes = send(sock, parser::request_select.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            } else if (parser::request_type == "INSERT") {
+                int len_table_name = parser::request_insert.name.size();
+                int sendRes = send(sock, parser::request_insert.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            } else if (parser::request_type == "UPDATE") {
+                int len_table_name = parser::request_update.name.size();
+                int sendRes = send(sock, parser::request_update.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            } else if (parser::request_type == "DELETE") {
+                int len_table_name = parser::request_delete.name.size();
+                int sendRes = send(sock, parser::request_delete.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            } else if (parser::request_type == "CREATE") {
+                int len_table_name = parser::request_create.name.size();
+                int sendRes = send(sock, parser::request_create.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            } else if (parser::request_type == "DROP") {
+                int len_table_name = parser::request_drop.name.size();
+                int sendRes = send(sock, parser::request_drop.name.data(), len_table_name + 1, 0);
+                if (sendRes == -1)
+                {
+                    std::cerr << "Could not send to server! Whoops!\r\n";
+                    continue;
+                }
+            }
+        } catch (const std::logic_error & e) {
+            std::cerr << "Can't sending data to server. Error message: " << e.what() << '!' << std::endl;
+            std::cerr << "Try again, please." << std::endl;
         }
 
         //      Wait for response

@@ -2,66 +2,66 @@
 #include <vector>
 #include <string>
 
-struct select {
+struct struct_select {
     std::string name;
     std::vector<std::string> fields;
     void clear();
 };
 
-struct insert {
+struct struct_insert {
     std::string name;
     std::vector<std::string> fields;
     void clear();
 };
 
-struct update {
+struct struct_update {
     std::string name;
     std::string field;
     std::vector<std::string> expresion;
     void clear();
 };
 
-struct delete {
+struct struct_delete {
     std::string name;
     void clear();
 };
 
-struct create {
+struct struct_create {
     std::string name;
     std::vector<std::string> fields;
     void clear();
 };
 
-struct drop() {
+struct struct_drop {
     std::string name;
     void clear();
 };
 
-void select::clear() {
+void struct_select::clear() {
     name.clear();
     fields.clear();
 }
 
-void insert::clear() {
+void struct_insert::clear() {
     name.clear();
     fields.clear();
 }
 
-void update::clear() {
+void struct_update::clear() {
     name.clear();
-    fields.clear();
+    field.clear();
     expresion.clear();
 }
 
-void delete::clear() {
+void struct_delete::clear() {
     name.clear();
 }
 
-void create::clear() {
+void struct_create::clear() {
     name.clear();
     fields.clear();
 }
 
-void drop::clear() {
+void struct_drop::clear() {
     name.clear();
 }
