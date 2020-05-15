@@ -4,8 +4,9 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-#include <string.h>
+//#include <string.h>
 #include <string>
+#include "parser.h"
 
 void manual()
 {
@@ -27,6 +28,7 @@ void manual()
 
 int main()
 {
+    setlocale(LC_ALL, "Russian");
     //  Create a socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
@@ -68,6 +70,26 @@ int main()
         if (userInput == "man") {
             manual();
             userInput.clear();
+            continue;
+        }
+        //      clear cin to parser
+        for (unsigned int i = 0; i < userInput.size() + 1; ++i) {
+            std::cin.unget();
+        }
+        userInput.clear();
+        //      parser work
+        try {
+            parser::init();
+            parser::H();
+        }
+        catch (const std::logic_error& e){
+            std::cerr << "Wrong input! Error mesage: " << e.what() << "!" << std::endl;
+            std::cerr << "Read manual using \"man\" and write again your request!" << std::endl;
+            /*if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
+            {
+                std::cin.clear(); //clears the error flag on cin
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // skips to the next newline
+            }*/
             continue;
         }
         //      Send to server
