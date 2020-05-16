@@ -975,9 +975,15 @@ namespace parser{
 
     void S();
     void I();
+    void I_Field_Value();
+    void I_Long_Int();
     void U();
+    void U_Expression();
+    void U_Long_Expression();
     void DE();
     void C();
+    void C_Field_Description_List();
+    void C_Field_Type();
     void DR();
 
     void H() {
@@ -1011,7 +1017,22 @@ namespace parser{
     }
 
     void S(){
-        //obrabotka field list
+        if (lexer::cur_lex_type == lex_type_t::IDENT) {
+            request_select.fields.push_back(lexer::cur_lex_text);
+            lexer::next();
+            while (lexer::cur_lex_type == lex_type_t::COMMA) {
+                lexer::next();
+                if (lexer::cur_lex_type != lex_type_t::IDENT) {
+                    throw std::logic_error("Bad field name");
+                }
+                request_select.fields.push_back(lexer::cur_lex_text);
+                lexer::next();
+            }
+        } else if (lexer::cur_lex_type == lex_type_t::MULT) {
+            lexer::next();
+        } else {
+            throw std::logic_error("No fields after word \'SELECT\'");
+        }
         if (lexer::cur_lex_type != lex_type_t::FROM) {
             throw std::logic_error("No word \"FROM\" after field list");
         }
@@ -1042,11 +1063,46 @@ namespace parser{
             throw std::logic_error("No \"(\" before field value");
         }
         lexer::next();
-        //obrabotka field value
+        I_Field_Value();
+        while (lexer::cur_lex_type == lex_type_t::COMMA) {
+            lexer::next();
+            I_Field_Value();
+        }
         if (lexer::cur_lex_type != lex_type_t::CLOSE) {
             throw std::logic_error("No \")\" after field value");
         }
         lexer::next();
+    }
+
+    void I_Field_Value(){
+        if (lexer::cur_lex_type == lex_type_t::STR_VAL){
+            request_insert.fields.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else {
+            I_Long_Int();
+        }
+    }
+
+    void I_Long_Int(){
+        if (lexer::cur_lex_type == lex_type_t::LONGNUM) {
+            request_insert.fields.push_back(lexer::cur_lex_text);
+        } else if (lexer::cur_lex_type == lex_type_t::PLUS) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
+                throw std::logic_error("");
+            }
+            request_insert.fields.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else if (lexer::cur_lex_type == lex_type_t::MINUS) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
+                throw std::logic_error("");
+            }
+            request_insert.fields.push_back("-" + lexer::cur_lex_text);
+            lexer::next();
+        } else {
+            throw std::logic_error("");
+        }
     }
 
     void U(){
@@ -1068,12 +1124,25 @@ namespace parser{
             throw std::logic_error("No \"=\" after field name");
         }
         lexer::next();
-        //vyrashenie
+        U_Expression();
         if (lexer::cur_lex_type != lex_type_t::WHERE) {
             throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
         }
         lexer::next();
         //obrabotka WHERE-clause
+    }
+
+    void U_Expression() {
+        if (lexer::cur_lex_type == lex_type_t::STR_VAL){
+            request_update.expression.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else {
+            U_Long_Expression();
+        }
+    }
+
+    void U_Long_Expression(){
+
     }
 
     void DE(){
@@ -1107,11 +1176,53 @@ namespace parser{
             throw std::logic_error("No \"(\" before field description list");
         }
         lexer::next();
-        //obrabotka field description list
+        C_Field_Description_List();
         if (lexer::cur_lex_type != lex_type_t::CLOSE) {
             throw std::logic_error("No \")\" after field description list");
         }
         lexer::next();
+    }
+
+    void C_Field_Description_List() {
+        if (lexer::cur_lex_type != lex_type_t::IDENT) {
+            throw std::logic_error("");
+        }
+        lexer::cur_lex_text;
+        lexer::next();
+        C_Field_Type();
+        while (lexer::cur_lex_type == lex_type_t::COMMA) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::IDENT) {
+                throw std::logic_error("");
+            }
+            lexer::cur_lex_text;
+            lexer::next();
+            C_Field_Type();
+        }
+    }
+
+    void C_Field_Type() {
+        if (lexer::cur_lex_type == lex_type_t::LONG) {
+            request_create.fields.push_back()//zapisat' prev cur_lex_text
+            lexer::next();
+        } else if (lexer::cur_lex_type == lex_type_t::TEXT) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::OPEN) {
+                throw std::logic_error("");
+            }
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
+                throw std::logic_error("");
+            }
+            request_create.fields.push_back(lexer::cur_lex_text);
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::CLOSE) {
+                throw std::logic_error("");
+            }
+            lexer::next();
+        } else {
+            throw std::logic_error("");
+        }
     }
 
     void DR(){
