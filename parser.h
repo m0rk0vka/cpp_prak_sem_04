@@ -5,11 +5,16 @@ std::stringstream str_cin;
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, PLUS, MINUS, MULT, DIV, MOD, EQUALLY, GREAT, LESS, GREAT_EQUAL, LESS_EQUAL,
-    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, OR, END, STR_VAL, COMMA, LONGNUM, IDENT};
+    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, AND, OR, END, STR_VAL, COMMA, LONGNUM, IDENT};
 
-bool isal_num(int c){
+bool isal_num(int c) {
     return isalnum(c) || c == '_';
 }
+
+struct lex {
+    lex_type_t type;
+    std::string text;
+};
 
 namespace lexer {
     lex_type_t cur_lex_type;
@@ -31,7 +36,7 @@ namespace lexer {
             CREA, CREAT, CREATE, DR, DRO, DROP, F, FR, FRO, FROM, INT, INTO, SET, T, TA, TAB,
             TABL, TABLE, TE, TEX, TEXT, L, LO, LON, LONG, EQ, OP, CL, PL, MIN, MULT, DIV, MOD,
             GR, GR_EQ, LS, LS_EQ, NT, NT_EQ, W, WH, WHE, WHER, WHERE, N, NO, NOT, LI, LIK, LIKE,
-            A, AL, ALL, O, OR, START_S, MIDDLE_S, END_S, COM, LONGNUM, IDENT, OK } state = H;
+            A, AL, ALL, AN, AND, O, OR, START_S, MIDDLE_S, END_S, COM, LONGNUM, IDENT, OK } state = H;
         while (state != OK) {
             switch (state) {
             case H:
@@ -793,6 +798,8 @@ namespace lexer {
             case A:
                 if (c == 'L') {
                     state = AL;
+                } else if (c == 'N'){
+                    state = AN;
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
@@ -820,6 +827,26 @@ namespace lexer {
                     state = OK;
                 }
                 break;
+//          AND
+            case AN:
+            if (c == 'D') {
+                state = AND;
+            } else if (isal_num(c)) {
+                state = IDENT;
+            } else {
+                cur_lex_type = lex_type_t::IDENT;
+                state = OK;
+            }
+            break;
+
+        case AND:
+            if (isal_num(c)) {
+                state = IDENT;
+            } else {
+                cur_lex_type = lex_type_t::AND;
+                state = OK;
+            }
+            break;
 //          OR
             case O:
                 if (c == 'R') {
@@ -950,8 +977,14 @@ namespace lexer {
     }
 }
 
+bool comparison_op() {
+    bool strictly = lexer::cur_lex_type == lex_type_t::EQUALLY || lexer::cur_lex_type == lex_type_t::GREAT || lexer::cur_lex_type == lex_type_t::LESS;
+    bool no_strictly = lexer::cur_lex_type == lex_type_t::GREAT_EQUAL || lexer::cur_lex_type == lex_type_t::LESS_EQUAL || lexer::cur_lex_type == lex_type_t::NOT_EQUAL;
+    return strictly || no_strictly;
+}
+
 namespace parser{
-    std::string request_type, where_clause_type;
+    std::string request_type;
     struct_select request_select;
     struct_insert request_insert;
     struct_update request_update;
@@ -959,6 +992,14 @@ namespace parser{
     struct_create request_create;
     struct_drop request_drop;
     struct_field_description des_tmp;
+//  to WHERE-clause
+    std::string where_clause_type;
+    struct_like_where_clause like_where_clause;
+    struct_in_where_clause in_where_clause;
+    struct_bool_where_clause bool_where_clause;
+    int index_vec_lex;
+    bool where_clause_like_flag, where_clause_bool_flag;
+    std::vector<lex> vec_lex;
     std::vector<std::string> vec_str_tmp;
     std::string str_tmp;
 
@@ -971,6 +1012,16 @@ namespace parser{
         request_delete.clear();
         request_create.clear();
         request_drop.clear();
+//      WHERE-clause
+        where_clause_type.clear();
+        like_where_clause.clear();
+        in_where_clause.clear();
+        bool_where_clause.clear();
+        index_vec_lex = 0;
+        where_clause_like_flag =  where_clause_bool_flag = false;
+        vec_lex.clear();
+        vec_str_tmp.clear();
+        str_tmp.clear();
     }
 
     void check_end() {
@@ -999,7 +1050,32 @@ namespace parser{
     void C_Field_Description_List();
     void C_Field_Type();
     void DR();
+//  WHERE-clause
     void W();
+    void W_Like();
+    void W_In();
+    void W_In_Expression();
+    void W_In_Long_Expression();
+    void W_In_Long_Term();
+    void W_In_Long_Factor();
+    void W_In_Long_Value();
+    void W_In_Long_Int();
+    void W_In_Const_List();
+    void W_In_Const_String();
+    void W_In_Const_Long();
+    void W_In_Const_Long_Int();
+    void W_Bool();
+    void W_Bool_Term();
+    void W_Bool_Factor();
+    void W_Bool_Expression();
+    void W_Bool_Ratio();
+    void W_Bool_Text_Ratio();
+    void W_Bool_Long_Ratio();
+    void W_Bool_Long_Term();
+    void W_Bool_Long_Factor();
+    void W_Bool_Long_Value();
+    void W_Bool_Long_Int();
+    void W_Bool_Comparison_Operation();
 
     void H() {
         if (lexer::cur_lex_type == lex_type_t::SELECT) {
@@ -1097,7 +1173,7 @@ namespace parser{
 
     void I_Long_Int(){
         if (lexer::cur_lex_type == lex_type_t::LONGNUM) {
-            request_insert.fields_num.push_back(std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            request_insert.fields_num.push_back(std::strtol(lexer::cur_lex_text.data(), nullptr, 10));
             if (errno == ERANGE)
             {
                 errno = 0;
@@ -1110,7 +1186,7 @@ namespace parser{
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
                 throw std::logic_error("No number after \'+\'");
             }
-            request_insert.fields_num.push_back(std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            request_insert.fields_num.push_back(std::strtol(lexer::cur_lex_text.data(), nullptr, 10));
             if (errno == ERANGE)
             {
                 errno = 0;
@@ -1123,7 +1199,7 @@ namespace parser{
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
                 throw std::logic_error("No number after \'-\'");
             }
-            request_insert.fields_num.push_back(-1 * std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            request_insert.fields_num.push_back(-1 * std::strtol(lexer::cur_lex_text.data(), nullptr, 10));
             if (errno == ERANGE)
             {
                 errno = 0;
@@ -1317,7 +1393,7 @@ namespace parser{
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
                 throw std::logic_error("No number after \'(\'");
             }
-            des_tmp.size = std::strtoll(lexer::cur_lex_text.data(), nullptr, 10);
+            des_tmp.size = std::strtol(lexer::cur_lex_text.data(), nullptr, 10);
             if (errno == ERANGE) {
                 errno = 0;
                 throw std::logic_error("Too big number " + lexer::cur_lex_text);
@@ -1350,8 +1426,414 @@ namespace parser{
             throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
         }
         lexer::next();
+        //go on WHERE-clause
         while (lexer::cur_lex_type != lex_type_t::END) {
+            if (!where_clause_like_flag && lexer::cur_lex_type == lex_type_t::LIKE) {
+                where_clause_like_flag = true;
+            } else if (!where_clause_bool_flag && comparison_op()) {
+                where_clause_bool_flag = true;
+            }
+            vec_lex.push_back(lex{ lexer::cur_lex_type, lexer::cur_lex_text });
+            lexer::next();
+        }
+        vec_lex.push_back(lex{ lex_type_t::END, std::string("END") });
+        if (where_clause_like_flag) {
+            where_clause_type = "LIKE";
+            W_Like();
+        } else if (where_clause_bool_flag) {
+            where_clause_type = "BOOL";
+            W_Bool();
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::ALL) {
+            where_clause_type = "ALL";
+            ++index_vec_lex;
+        } else {
+            where_clause_type = "IN";
+            W_In();
+        }
+    }
 
+    void W_Like() {
+        if (vec_lex[index_vec_lex].type != lex_type_t::IDENT) {
+            throw std::logic_error("No field name before \'LIKE\'");
+        }
+        like_where_clause.field_name = vec_lex[index_vec_lex].text;
+        ++index_vec_lex;
+        if (vec_lex[index_vec_lex].type == lex_type_t::NOT) {
+            like_where_clause.use_not = true;
+            ++index_vec_lex;
+        }
+        if (vec_lex[index_vec_lex].type != lex_type_t::LIKE) {
+            throw std::logic_error("You can entry only \'NOT\' before \'LIKE\'");
+        }
+        ++index_vec_lex;
+        if (vec_lex[index_vec_lex].type != lex_type_t::STR_VAL) {
+            throw std::logic_error("You must entry sample string after \'LIKE\'");
+        }
+        like_where_clause.sample_string = vec_lex[index_vec_lex].text;
+        ++index_vec_lex;
+    }
+
+    void W_In() {
+        W_In_Expression();
+        if (vec_lex[index_vec_lex].type == lex_type_t::NOT) {
+            in_where_clause.use_not = true;
+            ++index_vec_lex;
+        }
+        if (vec_lex[index_vec_lex].type != lex_type_t::IN) {
+            throw std::logic_error("No word \'In\' in expression");
+        }
+        ++index_vec_lex;
+        if (vec_lex[index_vec_lex].type != lex_type_t::OPEN) {
+            throw std::logic_error("No \'(\' after \'IN\'");
+        }
+        ++index_vec_lex;
+        W_In_Const_List();
+        if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE)
+        {
+            throw std::logic_error("No \')\' after \'(\'");
+        }
+        ++index_vec_lex;
+    }
+
+    void W_In_Expression() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::STR_VAL) {
+            in_where_clause.expression.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            W_In_Long_Expression();
+        }
+    }
+
+    void W_In_Long_Expression() {
+        W_In_Long_Term();
+        while (vec_lex[index_vec_lex].type == lex_type_t::PLUS || vec_lex[index_vec_lex].type == lex_type_t::MINUS) {
+            int op;
+            if (vec_lex[index_vec_lex].type == lex_type_t::PLUS) {
+                op = 0;
+            } else {
+                op = 1;
+            }
+            ++index_vec_lex;
+            W_In_Long_Term();
+            if (op == 0) {
+                in_where_clause.expression.push_back(std::string("+"));
+            } else {
+                in_where_clause.expression.push_back(std::string("-"));
+            }
+        }
+    }
+
+    void W_In_Long_Term() {
+        W_In_Long_Factor();
+        while (vec_lex[index_vec_lex].type == lex_type_t::MULT || vec_lex[index_vec_lex].type == lex_type_t::DIV|| vec_lex[index_vec_lex].type == lex_type_t::MOD) {
+            int op;
+            if (vec_lex[index_vec_lex].type == lex_type_t::MULT) {
+                op = 0;
+            } else if (vec_lex[index_vec_lex].type == lex_type_t::DIV) {
+                op = 1;
+            } else {
+                op = 2;
+            }
+            ++index_vec_lex;
+            W_In_Long_Factor();
+            if (op == 0) {
+                in_where_clause.expression.push_back(std::string("*"));
+            } else if (op == 1) {
+                in_where_clause.expression.push_back(std::string("/"));
+            } else {
+                in_where_clause.expression.push_back(std::string("%"));
+            }
+        }
+    }
+
+    void W_In_Long_Factor()
+    {
+        if (vec_lex[index_vec_lex].type == lex_type_t::OPEN) {
+            ++index_vec_lex;
+            W_In_Long_Expression();
+            if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE) {
+                throw std::logic_error("No \')\' after \'(\'");
+            }
+            ++index_vec_lex;
+        } else {
+            W_In_Long_Value();
+        }
+    }
+
+    void W_In_Long_Value() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::IDENT) {
+            in_where_clause.expression.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            W_In_Long_Int();
+        }
+    }
+
+    void W_In_Long_Int() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::LONGNUM) {
+            in_where_clause.expression.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::PLUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'+\'");
+            }
+            in_where_clause.expression.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::MINUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'-\'");
+            }
+            in_where_clause.expression.push_back(std::string("-") + vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            throw std::logic_error("No Text or Long expression");
+        }
+    }
+
+    void W_In_Const_List() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::STR_VAL) {
+            W_In_Const_String();
+        } else {
+            W_In_Const_Long();
+        }
+    }
+
+    void W_In_Const_String() {
+        if (vec_lex[index_vec_lex].type != lex_type_t::STR_VAL) {
+            throw std::logic_error("No text expression");
+        }
+        in_where_clause.list_consts_str.push_back(vec_lex[index_vec_lex].text);
+        ++index_vec_lex;
+        while (vec_lex[index_vec_lex].type == lex_type_t::COMMA) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::STR_VAL) {
+                throw std::logic_error("No Text expression after\',\'");
+            }
+            in_where_clause.list_consts_str.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        }
+    }
+
+    void W_In_Const_Long() {
+        W_In_Const_Long_Int();
+        while (vec_lex[index_vec_lex].type == lex_type_t::COMMA) {
+            ++index_vec_lex;
+            W_In_Const_Long_Int();
+        }
+    }
+
+    void W_In_Const_Long_Int() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::LONGNUM) {
+            in_where_clause.list_consts_num.push_back(std::strtol(vec_lex[index_vec_lex].text.data(), nullptr, 10));
+            if (errno == ERANGE) {
+                errno = 0;
+                throw std::logic_error("Too big number " + vec_lex[index_vec_lex].text);
+            }
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::PLUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'+\'");
+            }
+            in_where_clause.list_consts_num.push_back(std::strtol(vec_lex[index_vec_lex].text.data(), nullptr, 10));
+            if (errno == ERANGE) {
+                errno = 0;
+                throw std::logic_error("Too big number " + vec_lex[index_vec_lex].text);
+            }
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::MINUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'-\'");
+            }
+            in_where_clause.list_consts_num.push_back(std::strtol(vec_lex[index_vec_lex].text.data(), nullptr, 10) * -1);
+            if (errno == ERANGE) {
+                errno = 0;
+                throw std::logic_error("Too big number -" + vec_lex[index_vec_lex].text);
+            }
+            ++index_vec_lex;
+        } else {
+            throw std::logic_error("No Text or Long expression");
+        }
+    }
+
+    void W_Bool() {
+        W_Bool_Term();
+        while (vec_lex[index_vec_lex].type == lex_type_t::OR) {
+            ++index_vec_lex;
+            W_Bool_Term();
+            bool_where_clause.expression.push_back(std::string("OR"));
+        }
+    }
+
+    void W_Bool_Term() {
+        W_Bool_Factor();
+        while (vec_lex[index_vec_lex].type == lex_type_t::AND) {
+            ++index_vec_lex;
+            W_Bool_Factor();
+            bool_where_clause.expression.push_back(std::string("AND"));
+        }
+    }
+
+    void W_Bool_Factor() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::NOT) {
+            ++index_vec_lex;
+            W_Bool_Factor();
+            bool_where_clause.expression.push_back(std::string("NOT"));
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::OPEN) {
+            ++index_vec_lex;
+            W_Bool_Expression();
+            if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE) {
+                throw std::logic_error("No \')\' after \'(\'");
+            }
+            ++index_vec_lex;
+        }
+        else {
+            throw std::logic_error("No logic expression or ratio");
+        }
+    }
+
+    void W_Bool_Expression() {
+        int tmp_index = index_vec_lex;
+        try {
+            W_Bool_Ratio();
+            for (std::string& item : vec_str_tmp) {
+                bool_where_clause.expression.push_back(std::move(item));
+            }
+            vec_str_tmp.clear();
+        } catch (std::logic_error) {
+            index_vec_lex = tmp_index;
+            vec_str_tmp.clear();
+            W_Bool();
+        }
+    }
+
+    void W_Bool_Ratio() {
+        W_Bool_Text_Ratio();
+        W_Bool_Comparison_Operation();
+        W_Bool_Text_Ratio();
+        vec_str_tmp.push_back(str_tmp);
+    }
+
+    void W_Bool_Text_Ratio() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::STR_VAL) {
+            vec_str_tmp.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            W_Bool_Long_Ratio();
+        }
+    }
+
+    void W_Bool_Long_Ratio() {
+        W_Bool_Long_Term();
+        while (vec_lex[index_vec_lex].type == lex_type_t::PLUS || vec_lex[index_vec_lex].type == lex_type_t::MINUS) {
+            int op;
+            if (vec_lex[index_vec_lex].type == lex_type_t::PLUS) {
+                op = 0;
+            } else {
+                op = 1;
+            }
+            ++index_vec_lex;
+            W_Bool_Long_Term();
+            if (op == 0) {
+                vec_str_tmp.push_back(std::string("+"));
+            } else {
+                vec_str_tmp.push_back(std::string("-"));
+            }
+        }
+    }
+
+    void W_Bool_Long_Term() {
+        W_Bool_Long_Factor();
+        while (vec_lex[index_vec_lex].type == lex_type_t::MULT || vec_lex[index_vec_lex].type == lex_type_t::DIV|| vec_lex[index_vec_lex].type == lex_type_t::MOD) {
+            int op;
+            if (vec_lex[index_vec_lex].type == lex_type_t::MULT) {
+                op = 0;
+            } else if (vec_lex[index_vec_lex].type == lex_type_t::DIV) {
+                op = 1;
+            } else {
+                op = 2;
+            }
+            ++index_vec_lex;
+            W_Bool_Long_Factor();
+            if (op == 0) {
+                vec_str_tmp.push_back(std::string("*"));
+            } else if (op == 1) {
+                vec_str_tmp.push_back(std::string("/"));
+            } else {
+                vec_str_tmp.push_back(std::string("%"));
+            }
+        }
+    }
+
+    void W_Bool_Long_Factor() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::OPEN) {
+            ++index_vec_lex;
+            W_Bool_Long_Ratio();
+            if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE) {
+                throw std::logic_error("No \')\' after \'(\'");
+            }
+            ++index_vec_lex;
+        } else {
+            W_Bool_Long_Value();
+        }
+    }
+
+    void W_Bool_Long_Value() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::IDENT) {
+            vec_str_tmp.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            W_Bool_Long_Int();
+        }
+    }
+
+    void W_Bool_Long_Int() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::LONGNUM) {
+            vec_str_tmp.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::PLUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'+\'");
+            }
+            vec_str_tmp.push_back(vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::MINUS) {
+            ++index_vec_lex;
+            if (vec_lex[index_vec_lex].type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'-\'");
+            }
+            vec_str_tmp.push_back(std::string("-") + vec_lex[index_vec_lex].text);
+            ++index_vec_lex;
+        } else {
+            throw std::logic_error("No Text or Long expression");
+        }
+    }
+
+    void W_Bool_Comparison_Operation() {
+        if (vec_lex[index_vec_lex].type == lex_type_t::EQUALLY) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::GREAT) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::LESS) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::GREAT_EQUAL) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::LESS_EQUAL) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else if (vec_lex[index_vec_lex].type == lex_type_t::NOT_EQUAL) {
+            str_tmp = vec_lex[index_vec_lex].text;
+            ++index_vec_lex;
+        } else {
+            throw std::logic_error("No comparison opation");
         }
     }
 }

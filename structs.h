@@ -11,7 +11,7 @@ struct struct_select {
 struct struct_insert {
     std::string name;
     std::vector<std::string> fields_str;
-    std::vector<long long> fields_num;
+    std::vector<long> fields_num;
     std::vector<bool> flags; //false = fields_str; true = fields_num;
     void clear();
 };
@@ -73,4 +73,41 @@ void struct_create::clear() {
 
 void struct_drop::clear() {
     name.clear();
+}
+
+struct struct_like_where_clause {
+    std::string field_name;
+    bool use_not;
+    std::string sample_string;
+    void clear();
+};
+
+struct struct_in_where_clause {
+    std::vector<std::string> expression;
+    bool use_not;
+    std::vector<std::string> list_consts_str;
+    std::vector<long> list_consts_num;
+    void clear();
+};
+
+struct struct_bool_where_clause {
+    std::vector<std::string> expression;
+    void clear();
+};
+
+void struct_like_where_clause::clear() {
+    field_name.clear();
+    use_not = false;
+    sample_string.clear();
+}
+
+void struct_in_where_clause::clear() {
+    expression.clear();
+    use_not = false;
+    list_consts_str.clear();
+    list_consts_num.clear();
+}
+
+void struct_bool_where_clause::clear() {
+    expression.clear();
 }
