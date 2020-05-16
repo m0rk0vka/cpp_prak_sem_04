@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+#include "structs.h"
 
 using namespace std;
 
@@ -27,6 +28,7 @@ int main()
 
     bind(listening, (sockaddr*)&hint, sizeof(hint));
 
+//wait_client:
     // Tell Winsock the socket is for listening
     listen(listening, SOMAXCONN);
 
@@ -56,32 +58,192 @@ int main()
     close(listening);
 
     // While loop: accept and echo message back to client
+    std::string request_type;
+    struct_select request_select;
+    struct_insert request_insert;
+    struct_request_updateate request_update;
+    struct_delete request_delete;
+    struct_create request_create;
+    struct_drop request_drop;
+    struct_field_description des_tmp;
+//  to WHERE-clause
+    std::string where_clause_type;
+    struct_like_where_clause like_where_clause;
+    struct_in_where_clause in_where_clause;
+    struct_bool_where_clause bool_where_clause;
+
     char buf[4096];
 
     while (true)
     {
-        memset(buf, 0, 4096);
-
-        // Wait for client to send data
-        int bytesReceived = recv(clientSocket, buf, 4096, 0);
-        if (bytesReceived == -1)
-        {
-            cerr << "Error in recv(). Quitting" << endl;
-            break;
+        //Wait for client send data
+        try {
+            recv(clientSocket, &request_type, 7, 0);
+            recv(clientSocket, &where_clause_type, 5, 0);
+        } catch (const std::system_error& e) {
+            exit(0);
         }
-
-        if (bytesReceived == 0)
-        {
-            cout << "Client disconnected " << endl;
-            break;
+        try {
+            if (request_type == "SELECT") {
+                request_select.clear();
+                memset(buf, 0, 4096);
+                int len;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_select.name.append(buf);
+                memset(buf, 0, 4096);
+                int vec_len;
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    request_select.fields.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+            } else if (request_type == "INSERT") {
+                request_insert.clear();
+                memset(buf, 0, 4096);
+                int len, vec_len, int_tmp;
+                long long tmp;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_insert.name.append(buf);
+                memset(buf, 0, 4096);
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    request_insert.fields_str.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &tmp, 4, 0);
+                    request_insert.fields_num.push_back(tmp);
+                }
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &int_tmp, 4, 0);
+                    request_insert.flags.push_back(int_tmp);
+                }
+            } else if (request_type == "request_updateATE") {
+                request_update.clear();
+                memset(buf, 0, 4096);
+                int len, vec_len;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_update.name.append(buf);
+                memset(buf, 0, 4096);
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_update.field.append(buf);
+                memset(buf, 0, 4096);
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    request_update.expression.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+            } else if (request_type == "DELETE") {
+                request_delete.clear();
+                memset(buf, 0, 4096);
+                int len;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_delete.name.append(buf);
+                memset(buf, 0, 4096);
+            } else if (request_type == "CREATE") {
+                request_create.clear();
+                memset(buf, 0, 4096);
+                int len, vec_len;
+                field_def tmp;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_create.name.append(buf);
+                memset(buf, 0, 4096);
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    tmp.field.append(buf);
+                    memset(buf, 0, 4096);
+                    recv(clientSocket, &tmp.size, 4, 0);
+                    request_create.fields_def.push_back(std::move(tmp));
+                    tmp.field.clear();
+                }
+            } else if (request_type == "DROP") {
+                request_drop.clear();
+                memset(buf, 0, 4096);
+                int len;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                request_drop.name.append(buf);
+                memset(buf, 0, 4096);
+            }
+            if (where_clause_type == "LIKE") {
+                like_where_clause.clear();
+                memset(buf, 0, 4096);
+                int len;
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                like_where_clause.field.append(buf);
+                memset(buf, 0, 4096);
+                recv(clientSocket, &like_where_clause.neg, 1, 0);
+                recv(clientSocket, &len, 4, 0);
+                recv(clientSocket, buf, len, 0);
+                like_where_clause.str.append(buf);
+                memset(buf, 0, 4096);
+                like_where_clause.check_str();
+                wh_ptr = &like_where_clause;
+            } else if (where_clause_type == "IN") {
+                in_where_clause.clear();
+                memset(buf, 0, 4096);
+                int len, vec_len;
+                long long tmp;
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    in_where_clause.expression.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+                recv(clientSocket, &in_where_clause.neg, 1, 0);
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    in_where_clause.list_str.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &tmp, 4, 0);
+                    in_where_clause.list_num.push_back(tmp);
+                }
+                wh_ptr = &in_where_clause;
+            } else if (where_clause_type == "BOOL") {
+                bool_where_clause.clear();
+                memset(buf, 0, 4096);
+                int len, vec_len;
+                recv(clientSocket, &vec_len, 4, 0);
+                for (int i = 0; i < vec_len; ++i) {
+                    recv(clientSocket, &len, 4, 0);
+                    recv(clientSocket, buf, len, 0);
+                    bool_where_clause.logic_expr.push_back(std::string(buf));
+                    memset(buf, 0, 4096);
+                }
+                wh_ptr = &bool_where_clause;
+            } else if (where_clause_type == "ALL") {
+                wh_ptr = &wh4;
+            }
+        } catch (const std::system_error& e) {
+            continue;
         }
-
-        cout << string(buf, 0, bytesReceived) << endl;
-
         // Echo message back to client
-        send(clientSocket, buf, bytesReceived + 1, 0);
+        //send(clientSocket, buf, bytesReceived + 1, 0);
     }
-
+    //goto wait_client;
     // Close the socket
     close(clientSocket);
 
