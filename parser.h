@@ -1021,7 +1021,11 @@ namespace parser{
         }
         request_select.name = lexer::cur_lex_text;
         lexer::next();
-        //WHERE-clause
+        if (lexer::cur_lex_type != lex_type_t::WHERE) {
+            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
+        }
+        lexer::next();
+        //obrabotka WHERE-clause
     }
 
     void I(){
@@ -1058,14 +1062,18 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad field name");
         }
-        //zapisat' field name
+        request_update.field = lexer::cur_lex_text;
         lexer::next();
         if (lexer::cur_lex_type != lex_type_t::EQUALLY) {
             throw std::logic_error("No \"=\" after field name");
         }
         lexer::next();
         //vyrashenie
-        //WHERE-clause
+        if (lexer::cur_lex_type != lex_type_t::WHERE) {
+            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
+        }
+        lexer::next();
+        //obrabotka WHERE-clause
     }
 
     void DE(){
@@ -1078,7 +1086,11 @@ namespace parser{
         }
         request_delete.name = lexer::cur_lex_text;
         lexer::next();
-        //WHERE-clause
+        if (lexer::cur_lex_type != lex_type_t::WHERE) {
+            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
+        }
+        lexer::next();
+        //obrabotka WHERE-clause
     }
 
     void C(){
