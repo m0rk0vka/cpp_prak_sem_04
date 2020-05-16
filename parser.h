@@ -2,7 +2,7 @@
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, PLUS, MINUS, MULT, DIV, MOD, EQUALLY, GREAT, LESS, GREAT_EQUAL, LESS_EQUAL,
-    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, OR, END, LONGNUM, IDENT};
+    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, OR, END, STR_VAL, COMMA, LONGNUM, IDENT};
 
 bool isal_num(int c){
     return isalnum(c) || c == '_';
@@ -27,8 +27,8 @@ namespace lexer {
             U, UP, UPD, UPDA, UPDAT, UPDATE, D, DE, DEL, DELE, DELET, DELETE, C, CR, CRE,
             CREA, CREAT, CREATE, DR, DRO, DROP, F, FR, FRO, FROM, INT, INTO, SET, T, TA, TAB,
             TABL, TABLE, TE, TEX, TEXT, L, LO, LON, LONG, EQ, OP, CL, PL, MIN, MULT, DIV, MOD,
-            GR, GR_EQ, LS, LS_EQ, NT, NT_EQ, W, WH, WHE, WHER, WHERE, N, NO, NOT, LI, LIK, LIKE, A, AL, ALL, O, OR,
-            LONGNUM, IDENT, OK } state = H;
+            GR, GR_EQ, LS, LS_EQ, NT, NT_EQ, W, WH, WHE, WHER, WHERE, N, NO, NOT, LI, LIK, LIKE,
+            A, AL, ALL, O, OR, START_S, MIDDLE_S, END_S, COM, LONGNUM, IDENT, OK } state = H;
         while (state != OK) {
             switch (state) {
             case H:
@@ -80,6 +80,10 @@ namespace lexer {
                     state = LS;
                 } else if (c == '!') {
                     state = NT;
+                } else if (c == '\'') {
+                    state = START_S;
+                } else if (c == ',') {
+                    state = COM;
                 } else if (isalpha(c) || c == '_') {
                     state = IDENT;
                 } else if (isdigit(c)) {
@@ -833,6 +837,32 @@ namespace lexer {
                     state = OK;
                 }
                 break;
+//          COMMA
+            case COM:
+                cur_lex_type = lex_type_t::COMMA;
+                state = OK;
+                break;
+//          STR_VAL
+            case START_S:
+                if (c == '\n') {
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                } else if (c == '\'') {
+                    throw std::logic_error("You input empty string between \'\' in position " + std::to_string(cur_lex_pos - 1));
+                } else {
+                    state = MIDDLE_S;
+                }
+                break;
+            case MIDDLE_S:
+                if (c == '\n') {
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                } else if (c == '\'') {
+                    state = END_S;
+                }
+                break;
+            case END_S:
+                cur_lex_type = lex_type_t::STR_VAL;
+                state = OK;
+                break;
 //          WHERE-clause
             case OP:
                 cur_lex_type = lex_type_t::OPEN;
@@ -907,8 +937,7 @@ namespace lexer {
             }
 
             if (state != OK){
-                if (!isspace(c))
-                {
+                if (!isspace(c) || state == START_S) {
                     cur_lex_text.push_back(c);
                 }
                 c = std::cin.get();
