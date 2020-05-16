@@ -10,14 +10,16 @@ struct struct_select {
 
 struct struct_insert {
     std::string name;
-    std::vector<std::string> fields;
+    std::vector<std::string> fields_str;
+    std::vector<long long> fields_num;
+    std::vector<bool> flags; //false = fields_str; true = fields_num;
     void clear();
 };
 
 struct struct_update {
     std::string name;
     std::string field;
-    std::vector<std::string> expresion;
+    std::vector<std::string> expression;
     void clear();
 };
 
@@ -26,9 +28,14 @@ struct struct_delete {
     void clear();
 };
 
+struct struct_field_description {
+    std::string field;
+    long long size;
+};
+
 struct struct_create {
     std::string name;
-    std::vector<std::string> fields;
+    std::vector<struct_field_description> fields_description;
     void clear();
 };
 
@@ -44,13 +51,15 @@ void struct_select::clear() {
 
 void struct_insert::clear() {
     name.clear();
-    fields.clear();
+    fields_str.clear();
+    fields_num.clear();
+    flags.clear();
 }
 
 void struct_update::clear() {
     name.clear();
     field.clear();
-    expresion.clear();
+    expression.clear();
 }
 
 void struct_delete::clear() {
@@ -59,7 +68,7 @@ void struct_delete::clear() {
 
 void struct_create::clear() {
     name.clear();
-    fields.clear();
+    fields_description.clear();
 }
 
 void struct_drop::clear() {

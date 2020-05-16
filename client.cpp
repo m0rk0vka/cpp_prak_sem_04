@@ -62,8 +62,7 @@ int main()
     std::cout << "Print \"man\" to see manual. Print \"quit\" to quit the program. " << std::endl;
     do {
         //      Enter lines of text
-        //std::cout << "> ";
-        /*
+        std::cout << "> ";
         userInput.clear();
         std::getline(std::cin, userInput);
         if (userInput == "quit") {
@@ -75,13 +74,10 @@ int main()
             continue;
         }
         //      clear cin to parser
-        for (unsigned int i = 0; i < userInput.size() + 1; ++i) {
-            std::cin.unget();
-        }*/
-
+        str_cin.clear();
+        str_cin << userInput << '\n';
         //      parser work
         try {
-            std::cout << "new line" << std::endl;
             parser::init();
             parser::H();
             parser::check_end();
@@ -91,11 +87,12 @@ int main()
             std::cerr << "Read manual using \"man\" and write again your request!" << std::endl;
             if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
             {
-                std::cin.clear(); //clears the error flag on cin
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // skips to the next newline
+                str_cin.clear(); //clears the error flag on cin
+                str_cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // skips to the next newline
             }
             continue;
         }
+        std::cout << "Well\n";
         //      Send to server
         try {
             if (parser::request_type == "SELECT") {
@@ -155,12 +152,9 @@ int main()
         //      Wait for response
         memset(buf, 0, 4096);
         int bytesReceived = recv(sock, buf, 4096, 0);
-        if (bytesReceived == -1)
-        {
+        if (bytesReceived == -1) {
             std::cerr << "There was an error getting response from server\r\n";
-        }
-        else
-        {
+        } else {
             //      Display response
             std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";
         }

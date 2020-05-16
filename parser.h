@@ -1,4 +1,7 @@
 #include "structs.h"
+#include <sstream>
+
+std::stringstream str_cin;
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, PLUS, MINUS, MULT, DIV, MOD, EQUALLY, GREAT, LESS, GREAT_EQUAL, LESS_EQUAL,
@@ -14,7 +17,7 @@ namespace lexer {
     int cur_lex_pos, c;
 
     void init() {
-        c = std::cin.get();
+        c = str_cin.get();
         if (c == EOF || c == '\n') {
             throw std::logic_error("Empty request");
         }
@@ -88,7 +91,7 @@ namespace lexer {
                     state = IDENT;
                 } else if (isdigit(c)) {
                     state = LONGNUM;
-                } else if (c == '\n') {
+                } else if (c == '\n' || c == EOF) {
                     cur_lex_type = lex_type_t::END;
                     state = OK;
                 } else {
@@ -940,7 +943,7 @@ namespace lexer {
                 if (!isspace(c) || state == START_S) {
                     cur_lex_text.push_back(c);
                 }
-                c = std::cin.get();
+                c = str_cin.get();
                 ++cur_lex_pos;
             }
         }
@@ -948,13 +951,16 @@ namespace lexer {
 }
 
 namespace parser{
-    std::string request_type;
+    std::string request_type, where_clause_type;
     struct_select request_select;
     struct_insert request_insert;
     struct_update request_update;
     struct_delete request_delete;
     struct_create request_create;
     struct_drop request_drop;
+    struct_field_description des_tmp;
+    std::vector<std::string> vec_str_tmp;
+    std::string str_tmp;
 
     void init() {
         lexer::init();
@@ -968,6 +974,10 @@ namespace parser{
     }
 
     void check_end() {
+        /*while (lexer::cur_lex_type != lex_type_t::END) {
+            lexer::next();
+            //std::cout << "type = " << lexer::cur_lex_type;
+        }*/
         if (lexer::cur_lex_type != lex_type_t::END){
             throw std::logic_error("No end");
         }
@@ -980,11 +990,16 @@ namespace parser{
     void U();
     void U_Expression();
     void U_Long_Expression();
+    void U_Long_Term();
+    void U_Long_Factor();
+    void U_Long_Value();
+    void U_Long_Int();
     void DE();
     void C();
     void C_Field_Description_List();
     void C_Field_Type();
     void DR();
+    void W();
 
     void H() {
         if (lexer::cur_lex_type == lex_type_t::SELECT) {
@@ -1042,11 +1057,7 @@ namespace parser{
         }
         request_select.name = lexer::cur_lex_text;
         lexer::next();
-        if (lexer::cur_lex_type != lex_type_t::WHERE) {
-            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
-        }
-        lexer::next();
-        //obrabotka WHERE-clause
+        W();
     }
 
     void I(){
@@ -1076,7 +1087,8 @@ namespace parser{
 
     void I_Field_Value(){
         if (lexer::cur_lex_type == lex_type_t::STR_VAL){
-            request_insert.fields.push_back(lexer::cur_lex_text);
+            request_insert.fields_str.push_back(lexer::cur_lex_text);
+            request_insert.flags.push_back(false);
             lexer::next();
         } else {
             I_Long_Int();
@@ -1085,23 +1097,42 @@ namespace parser{
 
     void I_Long_Int(){
         if (lexer::cur_lex_type == lex_type_t::LONGNUM) {
-            request_insert.fields.push_back(lexer::cur_lex_text);
+            request_insert.fields_num.push_back(std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            if (errno == ERANGE)
+            {
+                errno = 0;
+                throw std::logic_error("Too big number " + lexer::cur_lex_text);
+            }
+            request_insert.flags.push_back(true);
+            lexer::next();
         } else if (lexer::cur_lex_type == lex_type_t::PLUS) {
             lexer::next();
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
-                throw std::logic_error("");
+                throw std::logic_error("No number after \'+\'");
             }
-            request_insert.fields.push_back(lexer::cur_lex_text);
+            request_insert.fields_num.push_back(std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            if (errno == ERANGE)
+            {
+                errno = 0;
+                throw std::logic_error("Too big number " + lexer::cur_lex_text);
+            }
+            request_insert.flags.push_back(true);
             lexer::next();
         } else if (lexer::cur_lex_type == lex_type_t::MINUS) {
             lexer::next();
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
-                throw std::logic_error("");
+                throw std::logic_error("No number after \'-\'");
             }
-            request_insert.fields.push_back("-" + lexer::cur_lex_text);
+            request_insert.fields_num.push_back(-1 * std::strtoll(lexer::cur_lex_text.data(), nullptr, 10));
+            if (errno == ERANGE)
+            {
+                errno = 0;
+                throw std::logic_error("Too big number -" + lexer::cur_lex_text);
+            }
+            request_insert.flags.push_back(true);
             lexer::next();
         } else {
-            throw std::logic_error("");
+            throw std::logic_error("No string or long int in field value");
         }
     }
 
@@ -1125,11 +1156,7 @@ namespace parser{
         }
         lexer::next();
         U_Expression();
-        if (lexer::cur_lex_type != lex_type_t::WHERE) {
-            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
-        }
-        lexer::next();
-        //obrabotka WHERE-clause
+        W();
     }
 
     void U_Expression() {
@@ -1142,7 +1169,86 @@ namespace parser{
     }
 
     void U_Long_Expression(){
+        U_Long_Term();
+        while (lexer::cur_lex_type == lex_type_t::PLUS || lexer::cur_lex_type == lex_type_t::MINUS) {
+            bool sign = lexer::cur_lex_type == lex_type_t::MINUS;
+            lexer::next();
+            U_Long_Term();
+            if (!sign) {
+                request_update.expression.push_back(std::string("+"));
+            } else {
+                request_update.expression.push_back(std::string("-"));
+            }
+        }
+    }
 
+    void U_Long_Term() {
+        U_Long_Factor();
+        while (lexer::cur_lex_type == lex_type_t::MULT || lexer::cur_lex_type == lex_type_t::DIV || lexer::cur_lex_type == lex_type_t::MOD)
+        {
+            int op = -1;
+            if (lexer::cur_lex_type == lex_type_t::MULT) {
+                op = 0;
+            } else if (lexer::cur_lex_type == lex_type_t::DIV) {
+                op = 1;
+            } else if (lexer::cur_lex_type == lex_type_t::MOD) {
+                op = 2;
+            }
+            lexer::next();
+            U_Long_Factor();
+            if (op == 0) {
+                request_update.expression.push_back(std::string("*"));
+            } else if (op == 1) {
+                request_update.expression.push_back(std::string("/"));
+            } else if (op == 2) {
+                request_update.expression.push_back(std::string("%"));
+            }
+        }
+    }
+
+    void U_Long_Factor() {
+        if (lexer::cur_lex_type == lex_type_t::OPEN) {
+            lexer::next();
+            U_Long_Expression();
+            if (lexer::cur_lex_type != lex_type_t::CLOSE) {
+                throw std::logic_error("No \')\' after \'(\'");
+            }
+            lexer::next();
+        } else {
+            U_Long_Value();
+        }
+    }
+
+    void U_Long_Value() {
+        if (lexer::cur_lex_type == lex_type_t::IDENT) {
+            request_update.expression.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else {
+            U_Long_Int();
+        }
+    }
+
+    void U_Long_Int() {
+        if (lexer::cur_lex_type == lex_type_t::LONGNUM) {
+            request_update.expression.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else if (lexer::cur_lex_type == lex_type_t::PLUS) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'+\'");
+            }
+            request_update.expression.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else if (lexer::cur_lex_type == lex_type_t::MINUS) {
+            lexer::next();
+            if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
+                throw std::logic_error("No number after \'-\'");
+            }
+            request_update.expression.push_back(lexer::cur_lex_text);
+            lexer::next();
+        } else {
+            throw std::logic_error("No string or long int in expression");
+        }
     }
 
     void DE(){
@@ -1155,11 +1261,7 @@ namespace parser{
         }
         request_delete.name = lexer::cur_lex_text;
         lexer::next();
-        if (lexer::cur_lex_type != lex_type_t::WHERE) {
-            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
-        }
-        lexer::next();
-        //obrabotka WHERE-clause
+        W();
     }
 
     void C(){
@@ -1187,7 +1289,7 @@ namespace parser{
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("");
         }
-        lexer::cur_lex_text;
+        des_tmp.field = lexer::cur_lex_text;
         lexer::next();
         C_Field_Type();
         while (lexer::cur_lex_type == lex_type_t::COMMA) {
@@ -1195,7 +1297,7 @@ namespace parser{
             if (lexer::cur_lex_type != lex_type_t::IDENT) {
                 throw std::logic_error("");
             }
-            lexer::cur_lex_text;
+            des_tmp.field = lexer::cur_lex_text;
             lexer::next();
             C_Field_Type();
         }
@@ -1203,25 +1305,31 @@ namespace parser{
 
     void C_Field_Type() {
         if (lexer::cur_lex_type == lex_type_t::LONG) {
-            request_create.fields.push_back()//zapisat' prev cur_lex_text
+            des_tmp.size = -1;
+            request_create.fields_description.push_back(std::move(des_tmp));
             lexer::next();
         } else if (lexer::cur_lex_type == lex_type_t::TEXT) {
             lexer::next();
             if (lexer::cur_lex_type != lex_type_t::OPEN) {
-                throw std::logic_error("");
+                throw std::logic_error("No \'(\' after \'TEXT\'");
             }
             lexer::next();
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
-                throw std::logic_error("");
+                throw std::logic_error("No number after \'(\'");
             }
-            request_create.fields.push_back(lexer::cur_lex_text);
+            des_tmp.size = std::strtoll(lexer::cur_lex_text.data(), nullptr, 10);
+            if (errno == ERANGE) {
+                errno = 0;
+                throw std::logic_error("Too big number " + lexer::cur_lex_text);
+            }
+            request_create.fields_description.push_back(std::move(des_tmp));
             lexer::next();
             if (lexer::cur_lex_type != lex_type_t::CLOSE) {
-                throw std::logic_error("");
+                throw std::logic_error("No \')\' after \'(\'");
             }
             lexer::next();
         } else {
-            throw std::logic_error("");
+            throw std::logic_error("No string or number in field description list");
         }
     }
 
@@ -1235,5 +1343,15 @@ namespace parser{
         }
         request_drop.name = lexer::cur_lex_text;
         lexer::next();
+    }
+
+    void W(){
+        if (lexer::cur_lex_type != lex_type_t::WHERE) {
+            throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
+        }
+        lexer::next();
+        while (lexer::cur_lex_type != lex_type_t::END) {
+
+        }
     }
 }
