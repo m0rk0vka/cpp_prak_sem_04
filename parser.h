@@ -1164,7 +1164,7 @@ namespace parser{
     void I_Field_Value(){
         if (lexer::cur_lex_type == lex_type_t::STR_VAL){
             request_insert.fields_str.push_back(lexer::cur_lex_text);
-            request_insert.flags.push_back(false);
+            request_insert.flags.push_back(0);
             lexer::next();
         } else {
             I_Long_Int();
@@ -1179,7 +1179,7 @@ namespace parser{
                 errno = 0;
                 throw std::logic_error("Too big number " + lexer::cur_lex_text);
             }
-            request_insert.flags.push_back(true);
+            request_insert.flags.push_back(1);
             lexer::next();
         } else if (lexer::cur_lex_type == lex_type_t::PLUS) {
             lexer::next();
@@ -1192,7 +1192,7 @@ namespace parser{
                 errno = 0;
                 throw std::logic_error("Too big number " + lexer::cur_lex_text);
             }
-            request_insert.flags.push_back(true);
+            request_insert.flags.push_back(1);
             lexer::next();
         } else if (lexer::cur_lex_type == lex_type_t::MINUS) {
             lexer::next();
@@ -1205,7 +1205,7 @@ namespace parser{
                 errno = 0;
                 throw std::logic_error("Too big number -" + lexer::cur_lex_text);
             }
-            request_insert.flags.push_back(true);
+            request_insert.flags.push_back(1);
             lexer::next();
         } else {
             throw std::logic_error("No string or long int in field value");

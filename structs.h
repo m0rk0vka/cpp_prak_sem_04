@@ -12,7 +12,7 @@ struct struct_insert {
     std::string name;
     std::vector<std::string> fields_str;
     std::vector<long> fields_num;
-    std::vector<bool> flags; //false = fields_str; true = fields_num;
+    std::vector<int> flags; //0 = fields_str; 1 = fields_num;
     void clear();
 };
 
@@ -30,7 +30,7 @@ struct struct_delete {
 
 struct struct_field_description {
     std::string field;
-    long long size;
+    long size;
 };
 
 struct struct_create {

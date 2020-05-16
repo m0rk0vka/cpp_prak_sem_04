@@ -92,59 +92,132 @@ int main()
             }
             continue;
         }
-        std::cout << "Well\n";
         //      Send to server
         try {
             if (parser::request_type == "SELECT") {
-                int len_table_name = parser::request_select.name.size();
-                int sendRes = send(sock, parser::request_select.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_select.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_select.name.data(), table_name_len + 1, 0);
+                int vec_len = parser::request_select.fields.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int field_len = parser::request_select.fields[i].size();
+                    send(sock, &field_len, sizeof(int), 0);
+                    send(sock, parser::request_select.fields[i].data(), field_len + 1, 0);
                 }
             } else if (parser::request_type == "INSERT") {
-                int len_table_name = parser::request_insert.name.size();
-                int sendRes = send(sock, parser::request_insert.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
+                parser::where_clause_type = "NO";
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_insert.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_insert.name.data(), table_name_len + 1, 0);
+                int vec_len = parser::request_insert.fields_str.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int field_len = parser::request_insert.fields_str[i].size();
+                    send(sock, &field_len, sizeof(int), 0);
+                    send(sock, parser::request_insert.fields_str[i].data(), field_len + 1, 0);
+                }
+                vec_len = parser::request_insert.fields_num.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    send(sock, &parser::request_insert.fields_num[i], sizeof(long), 0);
+                }
+                vec_len = parser::request_insert.flags.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    send(sock, &parser::request_insert.flags[i], sizeof(int), 0);
                 }
             } else if (parser::request_type == "UPDATE") {
-                int len_table_name = parser::request_update.name.size();
-                int sendRes = send(sock, parser::request_update.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_update.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_update.name.data(), table_name_len + 1, 0);
+                int field_len = parser::request_update.name.size();
+                send(sock, &field_len, sizeof(int), 0);
+                send(sock, parser::request_update.name.data(), field_len + 1, 0);
+                int vec_len = parser::request_update.expression.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int expression_len = parser::request_update.expression[i].size();
+                    send(sock, &expression_len, sizeof(int), 0);
+                    send(sock, parser::request_update.expression[i].data(), expression_len + 1, 0);
                 }
             } else if (parser::request_type == "DELETE") {
-                int len_table_name = parser::request_delete.name.size();
-                int sendRes = send(sock, parser::request_delete.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
-                }
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_delete.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_delete.name.data(), table_name_len + 1, 0);
             } else if (parser::request_type == "CREATE") {
-                int len_table_name = parser::request_create.name.size();
-                int sendRes = send(sock, parser::request_create.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
+                parser::where_clause_type = "NO";
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_create.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_create.name.data(), table_name_len + 1, 0);
+                int vec_len = parser::request_create.fields_description.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int field_len = parser::request_create.fields_description[i].field.size();
+                    send(sock, &field_len, sizeof(int), 0);
+                    send(sock, parser::request_create.fields_description[i].field.data(), field_len + 1, 0);
+                    send(sock, &parser::request_create.fields_description[i].size, sizeof(long), 0);
                 }
             } else if (parser::request_type == "DROP") {
-                int len_table_name = parser::request_drop.name.size();
-                int sendRes = send(sock, parser::request_drop.name.data(), len_table_name + 1, 0);
-                if (sendRes == -1)
-                {
-                    std::cerr << "Could not send to server! Whoops!\r\n";
-                    continue;
-                }
+                parser::where_clause_type = "NO";
+                send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
+                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
+                int table_name_len = parser::request_drop.name.size();
+                send(sock, &table_name_len, sizeof(int), 0);
+                send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
             }
-        } catch (const std::logic_error & e) {
+//          WHERE-clause
+            if (parser::where_clause_type == "LIKE") {
+                int field_name_len = parser::like_where_clause.field_name.size();
+                send(sock, &field_name_len, sizeof(int), 0);
+                send(sock, parser::like_where_clause.field_name.data(), field_name_len + 1, 0);
+                send(sock, &parser::like_where_clause.use_not, sizeof(bool), 0);
+                int str_len = parser::like_where_clause.sample_string.size();
+                send(sock, &str_len, sizeof(int), 0);
+                send(sock, parser::like_where_clause.sample_string.data(), str_len + 1, 0);
+            } else if (parser::where_clause_type == "IN") {
+                int vec_len = parser::in_where_clause.expression.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int expression_len = parser::in_where_clause.expression[i].size();
+                    send(sock, &expression_len, sizeof(int), 0);
+                    send(sock, parser::in_where_clause.expression[i].data(), expression_len + 1, 0);
+                }
+                send(sock, &parser::in_where_clause.use_not, sizeof(bool), 0);
+                vec_len = parser::in_where_clause.list_consts_str.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int const_str_len = parser::in_where_clause.list_consts_str[i].size();
+                    send(sock, &const_str_len, sizeof(int), 0);
+                    send(sock, parser::in_where_clause.list_consts_str[i].data(), const_str_len + 1, 0);
+                }
+                vec_len = parser::in_where_clause.list_consts_num.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    send(sock, &parser::in_where_clause.list_consts_num[i], sizeof(long), 0);
+                }
+            } else if (parser::where_clause_type == "BOOL") {
+                int vec_len = parser::bool_where_clause.expression.size();
+                send(sock, &vec_len, sizeof(int), 0);
+                for (unsigned int i = 0; i < vec_len; ++i) {
+                    int expression_len = parser::bool_where_clause.expression[i].size();
+                    send(sock, &expression_len, sizeof(int), 0);
+                    send(sock, parser::bool_where_clause.expression[i].data(), expression_len + 1, 0);
+                }
+            } else if (parser::where_clause_type == "ALL") {
+                // nothing to do
+            }
+        } catch (const std::system_error & e) {
             std::cerr << "Can't sending data to server. Error message: " << e.what() << '!' << std::endl;
             std::cerr << "Try again, please." << std::endl;
         }
