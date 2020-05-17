@@ -1,63 +1,59 @@
 #include <iostream>
-#include <sys/types.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <string>
 #include "structs.h"
+
+#define PORT 5400
 
 using namespace std;
 
 int main()
 {
-    // Create a socket
-    int listening = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (listening == -1) {
-        cerr << "Can't create a socket! Quitting" << endl;
-        return -1;
+    int server_fd, clientSocket, valread;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
     }
 
-    // Bind the ip address and port to a socket
-    sockaddr_in hint;
-    hint.sin_family = AF_UNIX;
-    hint.sin_port = htons(54000);
-    hint.sin_addr.s_addr = inet_addr("127.0.0.1");
-    /*int bind_res = */ bind(listening, (sockaddr*)&hint, sizeof(hint));
-    /*if (bind_res == -1) {
-        std::cerr << "Can't create local address" << std::endl;
-        exit(0);
+    // Forcefully attaching socket to the port 8080
+    /*if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+                   &opt, sizeof(opt)))
+    {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
     }*/
-//wait_client:
-    // Tell Winsock the socket is for listening
-    int listen_res = listen(listening, 128);
-    if (listen_res == -1) {
-        std::cerr << "Can't listen: " << std::error_code() << std::endl;
-        exit(0);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // Forcefully attaching socket to the port 8080
+    if (bind(server_fd, (struct sockaddr *)&address,
+             sizeof(address)) < 0)
+    {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
     }
-    // Wait for a connection
-    sockaddr_in client;
-    socklen_t clientSize = sizeof(client);
-    std::cout << "listen" << std::endl;
-    int clientSocket = accept(listening, (sockaddr*)&client, &clientSize);
+    if (listen(server_fd, 3) < 0)
+    {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+    if ((clientSocket = accept(server_fd, (struct sockaddr *)&address,
+                             (socklen_t *)&addrlen)) < 0)
+    {
+        perror("accept");
+        exit(EXIT_FAILURE);
+    }
     std::cout << "accept" << std::endl;
-    char host[NI_MAXHOST];      // Client's remote name
-    char service[NI_MAXSERV];   // Service (i.e. port) the client is connect on
-
-    memset(host, 0, NI_MAXHOST); // same as memset(host, 0, NI_MAXHOST);
-    memset(service, 0, NI_MAXSERV);
-
-    if (getnameinfo((sockaddr*)&client, sizeof(client), host, NI_MAXHOST, service, NI_MAXSERV, 0) == 0) {
-        cout << host << " connected on port " << service << endl;
-    } else {
-        inet_ntop(AF_INET, &client.sin_addr, host, NI_MAXHOST);
-        cout << host << " connected on port " << ntohs(client.sin_port) << endl;
-    }
-
-    // Close listening socket
-    close(listening);
 
     // While loop: accept and echo message back to client
     std::string request_type;

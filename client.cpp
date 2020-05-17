@@ -3,10 +3,15 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string>
 #include <string.h>
 #include "parser.h"
+//#include "sock_wrap.h"
+
+#define PORT 5400
+
 
 void manual()
 {
@@ -17,43 +22,42 @@ void manual()
     std::cout << "INSERT-sentence ::= INSERT INTO <table name> (<field value> {, <field value> })" << std::endl;
     std::cout << "UPDATE-sentence ::= UPDATE <table name> SET <field name> = <expression> <WHERE-clause>" << std::endl;
     std::cout << "DELETE-sentence ::= DELETE FROM <table name> <WHERE-clause>" << std::endl;
-    std::cout << "CREATE-sentence ::= CREATE TABLE <table name> ( <list of fields definitions> )" << std::endl;
+    std::cout << "CREATE-sentence ::= CREATE TABLE <table name> ( <list of fields descriptions> )" << std::endl;
     std::cout << "DROP-sentence   ::= DROP TABLE <table name>" << std::endl;
     std::cout << std::endl;
-    std::cout << "List of fields definitions syntax: <field definition> { , <field definition> }" << std::endl;
-    std::cout << "Field definition syntax: <field name> <field type>" << std::endl;
-    std::cout << "Field type syntax: TEXT ( <unsigned long long> ) | LONG" << std::endl;
+    std::cout << "List of fields    ::= <field description> { , <field description> }" << std::endl;
+    std::cout << "Field description ::= <field name> <field type>" << std::endl;
+    std::cout << "Field type        ::= TEXT ( <unsigned long long> ) | LONG" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------" << std::endl;
 }
 
 int main()
 {
-    setlocale(LC_ALL, "Russian");
-    //  Create a socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1)
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        std::cerr << "Can't create socket" << std::endl;
-        exit(0);
+        std::cout << "Socket creation error" << std::endl;
+        return -1;
     }
 
-    //  Create a hint structure for the server we're connecting with
-    int port = 54000;
-    std::string ipAddress = "127.0.0.1";
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
 
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
-
-    //  Connect to the server on the socket
-    int connectRes = connect(sock, (sockaddr*)&hint, sizeof(hint));
-    if (connectRes == -1)
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
     {
-        std::cerr << "Can't connect to the server" << std::endl;
-        exit(0);
+        std::cout << "Invalid address/ Address not supported" << std::endl;
+        return -1;
     }
 
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        std::cout << "Connection Failed" << std::endl;
+        return -1;
+    }
+    std::cout << "cool" << std::endl;
     //  While loop:
     char buf[4096];
     std::string userInput;
@@ -81,8 +85,7 @@ int main()
             parser::init();
             parser::H();
             parser::check_end();
-        }
-        catch (const std::logic_error& e){
+        } catch (const std::logic_error& e){
             std::cerr << "Wrong input! Error mesage: " << e.what() << "!" << std::endl;
             std::cerr << "Read manual using \"man\" and write again your request!" << std::endl;
             if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
@@ -220,16 +223,18 @@ int main()
         } catch (const std::system_error & e) {
             std::cerr << "Can't sending data to server. Error message: " << e.what() << '!' << std::endl;
             std::cerr << "Try again, please." << std::endl;
+            continue;
         }
 
         //      Wait for response
         memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
-        if (bytesReceived == -1) {
-            std::cerr << "There was an error getting response from server\r\n";
-        } else {
+        try {
+            int bytesReceived = recv(sock, buf, 4096, 0);
             //      Display response
             std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";
+        } catch (const std::system_error& e) {
+            std::cout << "Can't get server response. Error massage: " << e.what() << std::endl;
+            continue;
         }
     } while(true);
 
