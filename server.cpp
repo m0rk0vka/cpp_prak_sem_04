@@ -161,7 +161,9 @@ int main()
                 memset(buf, 0, 4096);
                 int table_name_len;
                 recv(clientSocket, &table_name_len, 4, 0);
+                std::cout << "recv table_name_len" << std::endl;
                 recv(clientSocket, buf, table_name_len, 0);
+                std::cout << "recv table_name" << std::endl;
                 request_create.name.append(buf);
                 memset(buf, 0, 4096);
                 int vec_len;
