@@ -56,9 +56,8 @@ int main()
     struct_like_where_clause like_where_clause;
     struct_in_where_clause in_where_clause;
     struct_bool_where_clause bool_where_clause;
-    struct_all_where_clause all_where_clause;
-    where_clause *where_clause_ptr;
-    std::string answer;
+    //where_clause *where_clause_ptr;
+    std::string response;
     char buf[4096];
 
     while (true)
@@ -69,8 +68,8 @@ int main()
             std::cout << "take req_type" << std::endl;
             recv(clientSocket, buf, 8, 0);
             request_type = buf;
-            std::cout << "req_type = " << request_type << " wow" << std::endl;
-            std::cout << "take wh_type" << std::endl;
+            //std::cout << "req_type = " << request_type << " wow" << std::endl;
+            //std::cout << "take wh_type" << std::endl;
             memset(buf, 0, 4096);
             recv(clientSocket, buf, 8, 0);
             where_clause_type = buf;
@@ -97,6 +96,7 @@ int main()
                     memset(buf, 0, 4096);
                 }
             } else if (request_type == "INSERT") {
+                std::cout << "prinimai insert" << std::endl;
                 request_insert.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -106,25 +106,32 @@ int main()
                 memset(buf, 0, 4096);
                 int vec_len;
                 recv(clientSocket, &vec_len, 4, 0);
+                std::cout << "recv before 1 cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
+                    std::cout << "recv in cycle i = " << i << std::endl;
                     recv(clientSocket, &field_len, 4, 0);
                     recv(clientSocket, buf, field_len, 0);
                     request_insert.fields_str.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
                 recv(clientSocket, &vec_len, 4, 0);
+                std::cout << "recv before 2 cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
+                    std::cout << "recv in cycle i = " << i << std::endl;
                     long field_num;
                     recv(clientSocket, &field_num, 8, 0);
                     request_insert.fields_num.push_back(field_num);
                 }
+                std::cout << "recv before 3 cycle" << std::endl;
                 recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
+                    std::cout << "recv in cycle i = " << i << std::endl;
                     int flag;
                     recv(clientSocket, &flag, 4, 0);
                     request_insert.flags.push_back(flag);
                 }
+                std::cout << "zakanchiva prinimat' insert" << std::endl;
             } else if (request_type == "UPDATE") {
                 request_update.clear();
                 memset(buf, 0, 4096);
@@ -168,7 +175,7 @@ int main()
                 memset(buf, 0, 4096);
                 int vec_len;
                 recv(clientSocket, &vec_len, 4, 0);
-                std::cout << "recv before cecle" << std::endl;
+                std::cout << "recv before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
                     std::cout << "recv in cycle i = " << i << std::endl;
@@ -206,8 +213,6 @@ int main()
                 recv(clientSocket, buf, str_len, 0);
                 like_where_clause.sample_string.append(buf);
                 memset(buf, 0, 4096);
-                //like_where_clause.check_str();
-                where_clause_ptr = &like_where_clause;
             } else if (where_clause_type == "IN") {
                 in_where_clause.clear();
                 memset(buf, 0, 4096);
@@ -235,7 +240,6 @@ int main()
                     recv(clientSocket, &num, 8, 0);
                     in_where_clause.list_consts_num.push_back(num);
                 }
-                where_clause_ptr = &in_where_clause;
             } else if (where_clause_type == "BOOL") {
                 bool_where_clause.clear();
                 memset(buf, 0, 4096);
@@ -248,44 +252,59 @@ int main()
                     bool_where_clause.expression.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                where_clause_ptr = &bool_where_clause;
             } else if (where_clause_type == "ALL") {
-                where_clause_ptr = &all_where_clause;
+                //nothing to do
             }
         } catch (const std::system_error& e) {
             continue;
         }
         try {
             if (request_type == "SELECT") {
-
+                std::cout << "select" << std::endl;
+                std::string file_name = request_select.name.data();
+                Table table(file_name);
+                table.if_select(request_select.fields, where_clause_type, response);
+                std::cout << "end select" << std::endl;
             } else if (request_type == "INSERT") {
-
+                std::cout << "insert" << std::endl;
+                std::string file_name = request_insert.name.data();
+                Table table(file_name);
+                table.if_insert(request_insert.fields_str, request_insert.fields_num, request_insert.flags, response);
+                std::cout << "end insert" << std::endl;
             } else if (request_type == "UPDATE") {
-
+                std::cout << "update" << std::endl;
+                std::string file_name = request_update.name.data();
+                Table table(file_name);
+                table.if_update(request_update.field, request_update.expression, where_clause_type, response);
+                std::cout << "end update" << std::endl;
             } else if (request_type == "DELETE") {
-
+                std::cout << "delete" << std::endl;
+                std::string file_name = request_delete.name.data();
+                Table table(file_name);
+                table.if_delete(where_clause_type, response);
+                std::cout << "end delete" << std::endl;
             } else if (request_type == "CREATE") {
                 std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
-                table.if_create(request_create.fields_description, answer);
+                table.if_create(request_create.fields_description, response);
                 std::cout << "end create" << std::endl;
             } else if (request_type == "DROP") {
                 std::cout << "drop" << std::endl;
                 std::string file_name = request_drop.name.data();
                 Table table(file_name);
-                table.if_drop(answer);
+                table.if_drop(response);
                 std::cout << "end drop" << std::endl;
             }
         } catch (const std::logic_error & e) {
             std::string err = e.what();
-            answer = "You get an error. Server message: " + err + "\n";
-            send(clientSocket, &answer, answer.size(), 0);
+            response = "You get an error. Server message: " + err + "\n";
+            send(clientSocket, &response, response.size(), 0);
             close(clientSocket);
             exit(0);
         }
         // Echo message back to client
-        send(clientSocket, &answer, answer.size(), 0);
+        send(clientSocket, &response, response.size(), 0);
     }
     //goto wait_client;
     // Close the socket

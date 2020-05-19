@@ -67,7 +67,3 @@ struct struct_bool_where_clause : where_clause {
     std::vector<std::string> expression;
     void clear();
 };
-
-struct struct_all_where_clause : where_clause {
-
-};

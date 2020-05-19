@@ -15,10 +15,10 @@ class Table {
 public:
     Table(std::string);
     ~Table();
-    void if_select();
-    void if_insert();
-    void if_update();
-    void if_delete();
+    void if_select(std::vector<std::string> &, std::string &, std::string &);
+    void if_insert(std::vector<std::string> &, std::vector<long> &, std::vector<int> &, std::string &);
+    void if_update(std::string &, std::vector<std::string> &, std::string &, std::string &);
+    void if_delete(std::string &, std::string &);
     void if_create(std::vector<struct_field_description> &, std::string &);
     void if_drop(std::string &);
 };
