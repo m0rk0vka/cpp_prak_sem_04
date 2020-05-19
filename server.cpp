@@ -4,11 +4,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string>
-#include "structs.h"
+#include <fstream>
+#include "table.h"
 
 #define PORT 5400
-
-using namespace std;
 
 int main()
 {
@@ -37,7 +36,7 @@ int main()
 
     // Forcefully attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr *)&address,
-             sizeof(address)) < 0)
+             sizeof(address)) < 0L)
     {
         perror("bind failed");
         exit(EXIT_FAILURE);
@@ -69,7 +68,9 @@ int main()
     struct_like_where_clause like_where_clause;
     struct_in_where_clause in_where_clause;
     struct_bool_where_clause bool_where_clause;
-
+    struct_all_where_clause all_where_clause;
+    where_clause *where_clause_ptr;
+    std::string answer;
     char buf[4096];
 
     while (true)
@@ -202,7 +203,7 @@ int main()
                 like_where_clause.sample_string.append(buf);
                 memset(buf, 0, 4096);
                 //like_where_clause.check_str();
-                //wh_ptr = &like_where_clause;
+                where_clause_ptr = &like_where_clause;
             } else if (where_clause_type == "IN") {
                 in_where_clause.clear();
                 memset(buf, 0, 4096);
@@ -230,7 +231,7 @@ int main()
                     recv(clientSocket, &num, 8, 0);
                     in_where_clause.list_consts_num.push_back(num);
                 }
-                //wh_ptr = &in_where_clause;
+                where_clause_ptr = &in_where_clause;
             } else if (where_clause_type == "BOOL") {
                 bool_where_clause.clear();
                 memset(buf, 0, 4096);
@@ -243,16 +244,124 @@ int main()
                     bool_where_clause.expression.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                //wh_ptr = &bool_where_clause;
+                where_clause_ptr = &bool_where_clause;
             } else if (where_clause_type == "ALL") {
-                //wh_ptr = &wh4;
+                where_clause_ptr = &all_where_clause;
             }
         } catch (const std::system_error& e) {
             continue;
         }
+        try {
+            if (request_type == "SELECT") {
+                std::string file_name = request_select.name.data();
+                Table table(file_name);
+                const Column_struct columns = table.get_struct();
+                std::vector<int> id_s;
+                if (request_select.fields.size() == 0) {
+                    for(int i = 0; i < table.get_size(); i++) {
+                        id_s.push_back(i);
+                    }
+                } else {
+                    for(int i = 0; i < request_select.fields.size(); ++i) {
+                        int id = columns.field_id(request_select.fields[i]);
+                        if(!id) {
+                            throw std::logic_error("Incorrect Select-call: no such field on table: " + request_select.fields[i]);
+                        }
+                        id_s.push_back(id - 1);
+                    }
+                }
+                //where(table);
+                table.select(answer, id_s);
+            } else if (request_type == "INSERT") {
+                std::string file_name = request_insert.name.data();
+                std::string val;
+                int size;
+                Column_struct columns;
+                Table T(file_name);
+                size = T.get_size();
+                columns = T.get_struct();
+                int i = 0, i_str = 0, i_num = 0;
+                while(i <= size - 1) {
+                    if (request_insert.flags[i] == 1) {
+                        if (columns[i].type){
+                            throw std::logic_error("Incorrect: argument #" + std::to_string(i) + " should be text");
+                        } else {
+                            val += std::to_string(request_insert.fields_num[i_num]) + ' ';
+                            ++i_num;
+                        }
+                    } else {
+                        if (columns[i].type){
+                            throw std::logic_error("Incorrect: argument #" + std::to_string(i) + " should be text");
+                        } else {
+                            val += '\'' + request_insert.fields_str[i_str] + '\'';
+                            ++i_str;
+                        }
+                    }
+                    ++i;
+                }
+                FILE* fd = fopen(file_name.data(), "a");
+                val += "\n";
+                fputs(val.data(), fd);
+                answer = "Correct insert";
+            } else if (request_type == "UPDATE") {
+                /*std::string file_name = request_update.name.data();
+                Table table(file_name);
+                const Column_struct columns = table.get_struct();
+                int id = columns.field_id(request_update.field.data());
+                if(!id) {
+                    throw std::logic_error("Incorrect Update-call: no such field in table : ") + request_update.field.data();
+                }
+                where(table);
+                table.update(request_update.expression);
+                answer = "Correct Update-call";*/
+            } else if (request_type == "DELETE") {
+                std::string file_name = request_delete.name.data();
+                Table table(file_name);
+                //where(table);
+                table.ddelete();
+                answer = "Correct Delete-call";
+            } else if (request_type == "CREATE") {
+                std::string file_name = request_create.name.data();
+                std::string header;
+                int size = 0;
+                for (int i = 0; i < request_create.fields_description.size(); ++i) {
+                    size++;
+                    if (request_create.fields_description[i].size == -1){
+                        header += request_create.fields_description[i].field + "L ";
+                    } else {
+                        header += "T" + request_create.fields_description[i].field + ' ';
+                    }
+                }
+                FILE* fd_w = fopen(file_name.data(), "w");
+                if(fd_w != NULL) {
+                    header = std::to_string(size) + ' ' + header + '\n';
+                    fputs(header.data(), fd_w);
+                    fclose(fd_w);
+                    answer =  "Table " + file_name + " is created";
+                } else
+                    answer = "Database error: Table " + file_name + " is not created";
+            } else if (request_type == "DROP") {
+                std::string file_name = request_drop.name.data();
+                /*if (!unlink(file_name)) {
+                    answer = "Table " + file_name + " is deleted";
+                } else {
+                    switch(errno) {
+                    case EACCES :
+                        answer = "Incorrect : access denied";
+                    case ENOENT :
+                        answer = "Incorrect : no such table in database";
+                    }
+                }*/
+            }
+        } catch (const std::logic_error & e) {
+            std::string err = e.what();
+            answer = "You get an error. Server message: " + err + "\n";
+            send(clientSocket, &answer, answer.size(), 0);
+            close(clientSocket);
+            exit(0);
+        }
         // Echo message back to client
-        std::string str_end = "Well done!";
-        send(clientSocket, &str_end, 11, 0);
+        send(clientSocket, &answer, answer.size(), 0);
     }
     //goto wait_client;
     // Close the socket

@@ -798,7 +798,7 @@ namespace lexer {
             case A:
                 if (c == 'L') {
                     state = AL;
-                } else if (c == 'N'){
+                } else if (c == 'N') {
                     state = AN;
                 } else if (isal_num(c)) {
                     state = IDENT;
@@ -966,7 +966,7 @@ namespace lexer {
                 break;
             }
 
-            if (state != OK){
+            if (state != OK) {
                 if (!isspace(c) || state == START_S) {
                     cur_lex_text.push_back(c);
                 }
@@ -1029,7 +1029,7 @@ namespace parser{
             lexer::next();
             //std::cout << "type = " << lexer::cur_lex_type;
         }*/
-        if (lexer::cur_lex_type != lex_type_t::END){
+        if (lexer::cur_lex_type != lex_type_t::END) {
             throw std::logic_error("No end");
         }
     }
@@ -1107,7 +1107,7 @@ namespace parser{
         }
     }
 
-    void S(){
+    void S() {
         if (lexer::cur_lex_type == lex_type_t::IDENT) {
             request_select.fields.push_back(lexer::cur_lex_text);
             lexer::next();
@@ -1136,7 +1136,7 @@ namespace parser{
         W();
     }
 
-    void I(){
+    void I() {
         if (lexer::cur_lex_type != lex_type_t::INTO) {
             throw std::logic_error("No word \"INTO\" after \"INSERT\"");
         }
@@ -1161,8 +1161,8 @@ namespace parser{
         lexer::next();
     }
 
-    void I_Field_Value(){
-        if (lexer::cur_lex_type == lex_type_t::STR_VAL){
+    void I_Field_Value() {
+        if (lexer::cur_lex_type == lex_type_t::STR_VAL) {
             request_insert.fields_str.push_back(lexer::cur_lex_text);
             request_insert.flags.push_back(0);
             lexer::next();
@@ -1171,7 +1171,7 @@ namespace parser{
         }
     }
 
-    void I_Long_Int(){
+    void I_Long_Int() {
         if (lexer::cur_lex_type == lex_type_t::LONGNUM) {
             request_insert.fields_num.push_back(std::strtol(lexer::cur_lex_text.data(), nullptr, 10));
             if (errno == ERANGE)
@@ -1212,7 +1212,7 @@ namespace parser{
         }
     }
 
-    void U(){
+    void U() {
         if (lexer::cur_lex_type != lex_type_t::IDENT) {
             throw std::logic_error("Bad table name");
         }
@@ -1236,7 +1236,7 @@ namespace parser{
     }
 
     void U_Expression() {
-        if (lexer::cur_lex_type == lex_type_t::STR_VAL){
+        if (lexer::cur_lex_type == lex_type_t::STR_VAL) {
             request_update.expression.push_back(lexer::cur_lex_text);
             lexer::next();
         } else {
@@ -1244,7 +1244,7 @@ namespace parser{
         }
     }
 
-    void U_Long_Expression(){
+    void U_Long_Expression() {
         U_Long_Term();
         while (lexer::cur_lex_type == lex_type_t::PLUS || lexer::cur_lex_type == lex_type_t::MINUS) {
             bool sign = lexer::cur_lex_type == lex_type_t::MINUS;
@@ -1320,14 +1320,14 @@ namespace parser{
             if (lexer::cur_lex_type != lex_type_t::LONGNUM) {
                 throw std::logic_error("No number after \'-\'");
             }
-            request_update.expression.push_back(lexer::cur_lex_text);
+            request_update.expression.push_back(std::string("-") + lexer::cur_lex_text);
             lexer::next();
         } else {
             throw std::logic_error("No string or long int in expression");
         }
     }
 
-    void DE(){
+    void DE() {
         if (lexer::cur_lex_type != lex_type_t::FROM) {
             throw std::logic_error("No word \"FROM\" after \"DELETE\"");
         }
@@ -1340,7 +1340,7 @@ namespace parser{
         W();
     }
 
-    void C(){
+    void C() {
         if (lexer::cur_lex_type != lex_type_t::TABLE) {
             throw std::logic_error("No word \"TABLE\" after \"CREATE\"");
         }
@@ -1409,7 +1409,7 @@ namespace parser{
         }
     }
 
-    void DR(){
+    void DR() {
         if (lexer::cur_lex_type != lex_type_t::TABLE) {
             throw std::logic_error("No word \"TABLE\" after \"DROP\"");
         }
@@ -1421,7 +1421,7 @@ namespace parser{
         lexer::next();
     }
 
-    void W(){
+    void W() {
         if (lexer::cur_lex_type != lex_type_t::WHERE) {
             throw std::logic_error("Forgot or incorrect entry \'WHERE\'");
         }
