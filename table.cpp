@@ -23,7 +23,7 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
         throw std::logic_error("Can't open the table");
     }
     std::string head;
-    for ( i = 0; i < field_description.size(); i++) {
+    for (int i = 0; i < field_description.size(); i++) {
         long field_size = field_description[i].size;
         std::string field_text = field_description[i].field.data();
         head += field_text + " ";

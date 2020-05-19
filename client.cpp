@@ -154,7 +154,9 @@ int main() {
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_delete.name.data(), table_name_len + 1, 0);
             } else if (parser::request_type == "CREATE") {
+                std::cout << "otpravka na server" << std::endl;
                 parser::where_clause_type = "NO";
+                std::cout << parser::request_type.data() << std::endl;
                 send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
                 send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
                 int table_name_len = parser::request_create.name.size();
@@ -168,6 +170,7 @@ int main() {
                     send(sock, parser::request_create.fields_description[i].field.data(), field_len + 1, 0);
                     send(sock, &parser::request_create.fields_description[i].size, sizeof(long), 0);
                 }
+                std::cout << "konez otpravki na server" << std::endl;
             } else if (parser::request_type == "DROP") {
                 parser::where_clause_type = "NO";
                 send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
@@ -226,6 +229,7 @@ int main() {
         //      Wait for response
         memset(buf, 0, 4096);
         try {
+            std::cout << "waiting response" << std::endl;
             int bytesReceived = recv(sock, buf, 4096, 0);
             //      Display response
             std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";

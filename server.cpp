@@ -70,8 +70,14 @@ int main()
     {
         //Wait for client send data
         try {
-            recv(clientSocket, &request_type, 7, 0);
-            recv(clientSocket, &where_clause_type, 5, 0);
+            memset(request_type, 0, 8);
+            std::cout << "take req_type" << std::endl;
+            recv(clientSocket, &request_type, 8, 0);
+            std::cout << "req_type = " << request_type << " wow" << std::endl;
+            std::cout << "take wh_type" << std::endl;
+            memset(where_cluse_type, 0, 8);
+            recv(clientSocket, &where_clause_type, 8, 0);
+            std::cout << "end types" << std::endl;
         } catch (const std::system_error& e) {
             exit(0);
         }
@@ -153,6 +159,7 @@ int main()
                 request_delete.name.append(buf);
                 memset(buf, 0, 4096);
             } else if (request_type == "CREATE") {
+                std::cout << "prinimai create" << std::endl;
                 request_create.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -172,6 +179,7 @@ int main()
                     request_create.fields_description.push_back(std::move(des_tmp));
                     des_tmp.field.clear();
                 }
+                std::cout << "zakanchiva prinimat' create" << std::endl;
             } else if (request_type == "DROP") {
                 request_drop.clear();
                 memset(buf, 0, 4096);
@@ -258,6 +266,7 @@ int main()
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
                 table.if_create(request_create.fields_description, answer);
+                std::cout << "end create" << std::endl;
             } else if (request_type == "DROP") {
                 /*std::string file_name = request_drop.name.data();
                 Table(file_name);*/
