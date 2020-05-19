@@ -24,18 +24,18 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
     }
     std::string head;
     for (int i = 0; i < field_description.size(); i++) {
-        long field_size = field_description[i].size();
+        long field_size = field_description[i].size;
         std::string field_text = field_description[i].field.data();
         head += field_text + " ";
         if (field_size == -1) {
             head += "L ";
         } else {
-            head += std::to_string(size) + " ";
+            head += std::to_string(field_size) + " ";
         }
     }
     head += "\n";
     std::ofstream fout;
-    fout.open(name, std::ios::out);
+    fout.open(table_name, std::ios::out);
     fout << head;
     fout.close();
 }
