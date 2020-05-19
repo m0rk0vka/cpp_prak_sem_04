@@ -8,7 +8,6 @@
 #include <string>
 #include <string.h>
 #include "parser.h"
-//#include "sock_wrap.h"
 
 #define PORT 5400
 
