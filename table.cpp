@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cstdio>
 #include <stdio.h>
+#include <dos.h>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -43,7 +44,7 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
 }
 
 void Table::if_drop(std::string & answer) {
-    if(remove(table_name)) {
+    if(unlink(table_name) == -1) {
         std::logic_error("Can't remove file");
     } else {
         answer = "Drop " + table_name + " was successful.";
