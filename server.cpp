@@ -28,20 +28,15 @@ int main()
     address.sin_port = htons(PORT);
 
     // Forcefully attaching socket to the port 8080
-    if (bind(server_fd, (struct sockaddr *)&address,
-             sizeof(address)) < 0L)
-    {
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 3) < 0)
-    {
+    if (listen(server_fd, 3) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    if ((clientSocket = accept(server_fd, (struct sockaddr *)&address,
-                             (socklen_t *)&addrlen)) < 0)
-    {
+    if ((clientSocket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
         perror("accept");
         exit(EXIT_FAILURE);
     }
@@ -70,13 +65,15 @@ int main()
     {
         //Wait for client send data
         try {
-            memset(request_type, 0, 8);
+            memset(buf, 0, 4096);
             std::cout << "take req_type" << std::endl;
-            recv(clientSocket, &request_type, 8, 0);
+            recv(clientSocket, buf, 8, 0);
+            request_type = buf;
             std::cout << "req_type = " << request_type << " wow" << std::endl;
             std::cout << "take wh_type" << std::endl;
-            memset(where_cluse_type, 0, 8);
-            recv(clientSocket, &where_clause_type, 8, 0);
+            memset(buf, 0, 4096);
+            recv(clientSocket, buf, 8, 0);
+            where_clause_type = buf;
             std::cout << "end types" << std::endl;
         } catch (const std::system_error& e) {
             exit(0);
