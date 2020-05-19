@@ -150,7 +150,7 @@ int main() {
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_delete.name.data(), table_name_len + 1, 0);
             } else if (parser::request_type == "CREATE") {
-                std::cout << "otpravka na server" << std::endl;
+                std::cout << "otpravka na server create" << std::endl;
                 parser::where_clause_type = "NO";
                 std::cout << parser::request_type.data() << std::endl;
                 send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
@@ -168,14 +168,16 @@ int main() {
                     send(sock, parser::request_create.fields_description[i].field.data(), field_len + 1, 0);
                     send(sock, &parser::request_create.fields_description[i].size, sizeof(long), 0);
                 }
-                std::cout << "konez otpravki na server" << std::endl;
+                std::cout << "konez otpravki create na server" << std::endl;
             } else if (parser::request_type == "DROP") {
+                std::cout << "otpravka na server drop" << std::endl;
                 parser::where_clause_type = "NO";
                 send(sock, parser::request_type.data(), parser::request_type.size() + 1, 0);
                 send(sock, parser::where_clause_type.data(), parser::where_clause_type.size() + 1, 0);
                 int table_name_len = parser::request_drop.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
+                std::cout << "konez otpravki drop na server" << std::endl;
             }
 //          WHERE-clause
             if (parser::where_clause_type == "LIKE") {

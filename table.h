@@ -20,5 +20,5 @@ public:
     void if_update();
     void if_delete();
     void if_create(std::vector<struct_field_description> &, std::string &);
-    void if_drop();
+    void if_drop(std::string &);
 };

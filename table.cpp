@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <stdio.h>
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
@@ -38,4 +39,13 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
     fout.open(table_name, std::ios::out);
     fout << head;
     fout.close();
+    answer = "Create " + table_name " was successful.";
+}
+
+void Table::if_drop(std::string & answer) {
+    if(remove(fname)) {
+        std::logic_error("Can't remove file");
+    } else {
+        answer = "Drop " + table_name + " was successful.";
+    }
 }

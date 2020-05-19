@@ -182,6 +182,7 @@ int main()
                 }
                 std::cout << "zakanchiva prinimat' create" << std::endl;
             } else if (request_type == "DROP") {
+                std::cout << "prinimai drop" << std::endl;
                 request_drop.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -189,6 +190,7 @@ int main()
                 recv(clientSocket, buf, table_name_len, 0);
                 request_drop.name.append(buf);
                 memset(buf, 0, 4096);
+                std::cout << "zakanchiva prinimat' drop" << std::endl;
             }
             if (where_clause_type == "LIKE") {
                 like_where_clause.clear();
@@ -269,8 +271,11 @@ int main()
                 table.if_create(request_create.fields_description, answer);
                 std::cout << "end create" << std::endl;
             } else if (request_type == "DROP") {
-                /*std::string file_name = request_drop.name.data();
-                Table(file_name);*/
+                std::cout << "drop" << std::endl;
+                std::string file_name = request_drop.name.data();
+                Table table(file_name);
+                table.if_drop(answer);
+                std::cout << "end drop" << std::endl;
             }
         } catch (const std::logic_error & e) {
             std::string err = e.what();
