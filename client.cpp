@@ -160,7 +160,9 @@ int main() {
                 send(sock, parser::request_create.name.data(), table_name_len + 1, 0);
                 int vec_len = parser::request_create.fields_description.size();
                 send(sock, &vec_len, sizeof(int), 0);
+                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
+                    std::cout << "in cycle i = " << i << std::endl;
                     int field_len = parser::request_create.fields_description[i].field.size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_create.fields_description[i].field.data(), field_len + 1, 0);

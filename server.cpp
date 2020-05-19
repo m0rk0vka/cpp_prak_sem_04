@@ -166,8 +166,10 @@ int main()
                 memset(buf, 0, 4096);
                 int vec_len;
                 recv(clientSocket, &vec_len, 4, 0);
+                std::cout << "recv before cecle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
+                    std::cout << "recv in cycle i = " << i << std::endl;
                     recv(clientSocket, &field_len, 4, 0);
                     recv(clientSocket, buf, field_len, 0);
                     des_tmp.field.append(buf);
