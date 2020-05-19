@@ -254,6 +254,7 @@ int main()
             } else if (request_type == "DELETE") {
 
             } else if (request_type == "CREATE") {
+                std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
                 table.if_create(request_create.fields_description, answer);

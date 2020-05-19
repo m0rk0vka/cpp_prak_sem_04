@@ -12,8 +12,7 @@
 #define PORT 5400
 
 
-void manual()
-{
+void manual() {
     std::cout << "--------------------------------------------------------------------------------------" << std::endl;
     std::cout << "Description of the model language:" << std::endl;
     std::cout << "SQL-sentence    ::= SELECT or INSERT or UPDATE or DELETE or CREATE or DROP sentence" << std::endl;
@@ -26,12 +25,11 @@ void manual()
     std::cout << std::endl;
     std::cout << "List of fields    ::= <field description> { , <field description> }" << std::endl;
     std::cout << "Field description ::= <field name> <field type>" << std::endl;
-    std::cout << "Field type        ::= TEXT ( <unsigned long long> ) | LONG" << std::endl;
+    std::cout << "Field type        ::= TEXT ( <unsigned long> ) | LONG" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------" << std::endl;
 }
 
-int main()
-{
+int main() {
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char buffer[1024] = {0};
@@ -104,7 +102,7 @@ int main()
                 send(sock, parser::request_select.name.data(), table_name_len + 1, 0);
                 int vec_len = parser::request_select.fields.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_select.fields[i].size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_select.fields[i].data(), field_len + 1, 0);
@@ -118,19 +116,19 @@ int main()
                 send(sock, parser::request_insert.name.data(), table_name_len + 1, 0);
                 int vec_len = parser::request_insert.fields_str.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_insert.fields_str[i].size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_insert.fields_str[i].data(), field_len + 1, 0);
                 }
                 vec_len = parser::request_insert.fields_num.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     send(sock, &parser::request_insert.fields_num[i], sizeof(long), 0);
                 }
                 vec_len = parser::request_insert.flags.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     send(sock, &parser::request_insert.flags[i], sizeof(int), 0);
                 }
             } else if (parser::request_type == "UPDATE") {
@@ -144,7 +142,7 @@ int main()
                 send(sock, parser::request_update.name.data(), field_len + 1, 0);
                 int vec_len = parser::request_update.expression.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int expression_len = parser::request_update.expression[i].size();
                     send(sock, &expression_len, sizeof(int), 0);
                     send(sock, parser::request_update.expression[i].data(), expression_len + 1, 0);
@@ -164,7 +162,7 @@ int main()
                 send(sock, parser::request_create.name.data(), table_name_len + 1, 0);
                 int vec_len = parser::request_create.fields_description.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_create.fields_description[i].field.size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_create.fields_description[i].field.data(), field_len + 1, 0);
@@ -190,7 +188,7 @@ int main()
             } else if (parser::where_clause_type == "IN") {
                 int vec_len = parser::in_where_clause.expression.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int expression_len = parser::in_where_clause.expression[i].size();
                     send(sock, &expression_len, sizeof(int), 0);
                     send(sock, parser::in_where_clause.expression[i].data(), expression_len + 1, 0);
@@ -198,20 +196,20 @@ int main()
                 send(sock, &parser::in_where_clause.use_not, sizeof(bool), 0);
                 vec_len = parser::in_where_clause.list_consts_str.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int const_str_len = parser::in_where_clause.list_consts_str[i].size();
                     send(sock, &const_str_len, sizeof(int), 0);
                     send(sock, parser::in_where_clause.list_consts_str[i].data(), const_str_len + 1, 0);
                 }
                 vec_len = parser::in_where_clause.list_consts_num.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     send(sock, &parser::in_where_clause.list_consts_num[i], sizeof(long), 0);
                 }
             } else if (parser::where_clause_type == "BOOL") {
                 int vec_len = parser::bool_where_clause.expression.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                for (unsigned int i = 0; i < vec_len; ++i) {
+                for (int i = 0; i < vec_len; ++i) {
                     int expression_len = parser::bool_where_clause.expression[i].size();
                     send(sock, &expression_len, sizeof(int), 0);
                     send(sock, parser::bool_where_clause.expression[i].data(), expression_len + 1, 0);
