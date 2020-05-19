@@ -44,14 +44,18 @@ struct struct_drop {
     void clear();
 };
 
-struct struct_like_where_clause {
+struct where_clause {
+
+};
+
+struct struct_like_where_clause : where_clause {
     std::string field_name;
     bool use_not;
     std::string sample_string;
     void clear();
 };
 
-struct struct_in_where_clause {
+struct struct_in_where_clause : where_clause {
     std::vector<std::string> expression;
     bool use_not;
     std::vector<std::string> list_consts_str;
@@ -59,7 +63,11 @@ struct struct_in_where_clause {
     void clear();
 };
 
-struct struct_bool_where_clause {
+struct struct_bool_where_clause : where_clause {
     std::vector<std::string> expression;
     void clear();
+};
+
+struct struct_all_where_clause : where_clause {
+
 };
