@@ -13,6 +13,9 @@
 Table::Table(std::string _file_name) {
     table_name = _file_name;
     file.open(table_name, std::ios::in);
+    if(!file.is_open()) {
+        throw std::logic_error("Can't open the table");
+    }
 }
 
 Table::~Table() {
@@ -20,9 +23,6 @@ Table::~Table() {
 }
 
 void Table::if_create(std::vector<struct_field_description>& field_description, std::string & answer) {
-    if(!file.is_open()) {
-        throw std::logic_error("Can't open the table");
-    }
     std::string head;
     for (int i = 0; i < field_description.size(); i++) {
         long field_size = field_description[i].size;
@@ -39,11 +39,11 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
     fout.open(table_name, std::ios::out);
     fout << head;
     fout.close();
-    answer = "Create " + table_name " was successful.";
+    answer = "Create " + table_name + " was successful.";
 }
 
 void Table::if_drop(std::string & answer) {
-    if(remove(fname)) {
+    if(remove(table_name)) {
         std::logic_error("Can't remove file");
     } else {
         answer = "Drop " + table_name + " was successful.";
