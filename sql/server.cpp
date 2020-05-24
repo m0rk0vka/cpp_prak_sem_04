@@ -66,19 +66,32 @@ int main()
         try {
             memset(buf, 0, 4096);
             std::cout << "take req_type" << std::endl;
-            recv(clientSocket, buf, 8, 0);
+            int len_buf;
+            recv(clientSocket, &len_buf, 4, 0);
+            recv(clientSocket, buf, len_buf, 0);
             request_type = buf;
             //std::cout << "req_type = " << request_type << " wow" << std::endl;
             //std::cout << "take wh_type" << std::endl;
             memset(buf, 0, 4096);
-            recv(clientSocket, buf, 8, 0);
+            recv(clientSocket, &len_buf, 4, 0);
+            recv(clientSocket, buf, len_buf, 0);
             where_clause_type = buf;
             std::cout << "end types" << std::endl;
-        } catch (const std::system_error& e) {
+        } catch (const std::logic_error & e) {
+            std::string err = e.what();
+            response = "You get an error. Server message: " + err + "\n";
+            send(clientSocket, &response, response.size(), 0);
+            close(clientSocket);
+            exit(0);
+        } catch (...) {
+            response = "Wtf error\n";
+            send(clientSocket, &response, response.size(), 0);
+            close(clientSocket);
             exit(0);
         }
         try {
             if (request_type == "SELECT") {
+                std::cout << "prinimai select" << std::endl;
                 request_select.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -133,6 +146,7 @@ int main()
                 }
                 std::cout << "zakanchiva prinimat' insert" << std::endl;
             } else if (request_type == "UPDATE") {
+                std::cout << "prinimai update" << std::endl;
                 request_update.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -155,6 +169,7 @@ int main()
                     memset(buf, 0, 4096);
                 }
             } else if (request_type == "DELETE") {
+                std::cout << "prinimai delete" << std::endl;
                 request_delete.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
@@ -256,7 +271,11 @@ int main()
                 //nothing to do
             }
         } catch (const std::system_error& e) {
-            continue;
+            std::string err = e.what();
+            response = "You get an error. Server message: " + err + "\n";
+            send(clientSocket, &response, response.size(), 0);
+            close(clientSocket);
+            exit(0);
         }
         try {
             if (request_type == "SELECT") {
@@ -287,6 +306,7 @@ int main()
                 std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
+                std::cout << "table done" << std::endl;
                 table.if_create(request_create.fields_description, response);
                 std::cout << "end create" << std::endl;
             } else if (request_type == "DROP") {
@@ -299,6 +319,11 @@ int main()
         } catch (const std::logic_error & e) {
             std::string err = e.what();
             response = "You get an error. Server message: " + err + "\n";
+            send(clientSocket, &response, response.size(), 0);
+            close(clientSocket);
+            exit(0);
+        } catch (...) {
+            response = "Wtf error\n";
             send(clientSocket, &response, response.size(), 0);
             close(clientSocket);
             exit(0);

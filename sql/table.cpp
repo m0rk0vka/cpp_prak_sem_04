@@ -3,8 +3,11 @@
 #include <cstdio>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <dos.h>
+#include <exception>
+#include <stdexcept>
+#include <cerrno>
 #include <vector>
+#include <stack>
 #include <unordered_set>
 #include <unordered_map>
 #include <sstream>
@@ -14,10 +17,13 @@
 
 Table::Table(std::string _file_name) {
     table_name = _file_name;
-    file.open(table_name, std::ios::in);
+    std::cout << "here" << std::endl;
+    file.open(table_name, std::ios_base::in);
     if(!file.is_open()) {
+        std::cout << "lol" << std::endl;
         throw std::logic_error("Can't open the table");
     }
+    std::cout << "open" << std::endl;
 }
 
 Table::~Table() {
@@ -60,7 +66,7 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
     }
     std::string str;
     std::stringstream ss;
-    while (true){
+    while (!file.eof()){
         std::getline(file, str);
         //ss << str << '\n';
         if (where_type == "ALL") {
@@ -140,7 +146,101 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
 }
 
 void Table::if_update(std::string & field, std::vector<std::string> & expression, std::string & where_type, std::string & response) {
-
+    std::string head, tmp, tmp1;
+    std::getline(file, head);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0;
+    int cmp = 0;
+    tmp = field.data();
+    while (j < cnt_fields) {
+        tmp1.clear();
+        int k = i_tmp;
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        fields_vec.push_back(tmp1.data());
+        if (strcmp(tmp1.data(), tmp.data()) == 0){
+            cmp = 1;
+        }
+        ++j;
+    }
+    if (cmp == 1) {
+        throw std::logic_error("No such field");
+    }
+    --j;
+    std::string str;
+    std::stack<long> stack_num;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        std::getline(file, str);
+        if (where_type == "ALL") {
+            tmp_map.clear();
+            int k = 0;
+            while (k < cnt_fields) {
+                tmp.clear();
+                i_tmp = 0;
+                while (str[i_tmp] != ' ') {
+                    tmp += str[i_tmp];
+                    ++i_tmp;
+                }
+                ++i_tmp;
+                tmp_map[fields_vec[k]] = tmp;
+                ++k;
+            }
+            for (const std::string & item : expression) {
+                if (isalpha(item[0]) || item[0] == '_') {
+                    stack_num.push(strtol(tmp_map[item].data(), nullptr, 10));
+                } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                    stack_num.push(strtol(item.data(), nullptr, 10));
+                } else if (item == "+") {
+                    long op2 = stack_num.top();
+                    stack_num.pop();
+                    long op1 = stack_num.top();
+                    stack_num.pop();
+                    stack_num.push(op1 + op2);
+                } else if (item == "-") {
+                    long op2 = stack_num.top();
+                    stack_num.pop();
+                    long op1 = stack_num.top();
+                    stack_num.pop();
+                    stack_num.push(op1 - op2);
+                } else if (item == "*") {
+                    long op2 = stack_num.top();
+                    stack_num.pop();
+                    long op1 = stack_num.top();
+                    stack_num.pop();
+                    stack_num.push(op1 * op2);
+                } else if (item == "/") {
+                    long op2 = stack_num.top();
+                    stack_num.pop();
+                    long op1 = stack_num.top();
+                    stack_num.pop();
+                    stack_num.push(op1 / op2);
+                } else {
+                    long op2 = stack_num.top();
+                    stack_num.pop();
+                    long op1 = stack_num.top();
+                    stack_num.pop();
+                    stack_num.push(op1 % op2);
+                }
+            }
+            tmp_map[field.data()] = std::to_string(stack_num.top());
+            stack_num.pop();
+            for (auto item : tmp_map) {
+                response += item.second + ' ';
+            }
+            response += '\n';
+        }
+    }
 }
 
 void Table::if_delete(std::string & where_type, std::string & response) {
@@ -163,6 +263,7 @@ void Table::if_delete(std::string & where_type, std::string & response) {
 }
 
 void Table::if_create(std::vector<struct_field_description>& field_description, std::string & response) {
+    std::cout << "if create start" << std::endl;
     std::string head;
     int size = field_description.size();
     head += std::to_string(size) + " ";

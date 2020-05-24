@@ -1,4 +1,11 @@
 #include <iostream>
+#include <exception>
+#include <stdexcept>
+#include <cerrno>
+#include <fstream>
+#include <cstdio>
+#include <stdio.h>
+#include <stdlib.h>
 #include <vector>
 #include <string>
 

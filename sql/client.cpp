@@ -81,8 +81,7 @@ int main() {
         } catch (const std::logic_error& e){
             std::cerr << "Wrong input! Error mesage: " << e.what() << "!" << std::endl;
             std::cerr << "Read manual using \"man\" and write again your request!" << std::endl;
-            if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n')
-            {
+            if (lexer::cur_lex_type != lex_type_t::END && lexer::c != '\n') {
                 str_cin.clear(); //clears the error flag on cin
                 str_cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // skips to the next newline
             }
@@ -91,8 +90,12 @@ int main() {
         //      Send to server
         try {
             if (parser::request_type == "SELECT") {
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_select.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_select.name.data(), table_name_len, 0);
@@ -106,8 +109,12 @@ int main() {
             } else if (parser::request_type == "INSERT") {
                 std::cout << "otpravka na server insert" << std::endl;
                 parser::where_clause_type = "NO";
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_insert.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_insert.name.data(), table_name_len, 0);
@@ -136,8 +143,12 @@ int main() {
                 }
                 std::cout << "konez otpravki insert na server" << std::endl;
             } else if (parser::request_type == "UPDATE") {
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_update.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_update.name.data(), table_name_len, 0);
@@ -152,8 +163,12 @@ int main() {
                     send(sock, parser::request_update.expression[i].data(), expression_len, 0);
                 }
             } else if (parser::request_type == "DELETE") {
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_delete.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_delete.name.data(), table_name_len, 0);
@@ -161,8 +176,12 @@ int main() {
                 std::cout << "otpravka na server create" << std::endl;
                 parser::where_clause_type = "NO";
                 std::cout << parser::request_type.data() << std::endl;
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_create.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_create.name.data(), table_name_len, 0);
@@ -180,8 +199,12 @@ int main() {
             } else if (parser::request_type == "DROP") {
                 std::cout << "otpravka na server drop" << std::endl;
                 parser::where_clause_type = "NO";
-                send(sock, parser::request_type.data(), parser::request_type.size(), 0);
-                send(sock, parser::where_clause_type.data(), parser::where_clause_type.size(), 0);
+                int len_type = parser::request_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::request_type.data(), len_type, 0);
+                len_type = parser::where_clause_type.size();
+                send(sock, &len_type, sizeof(int), 0);
+                send(sock, parser::where_clause_type.data(), len_type, 0);
                 int table_name_len = parser::request_drop.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
@@ -225,7 +248,7 @@ int main() {
                     send(sock, &expression_len, sizeof(int), 0);
                     send(sock, parser::bool_where_clause.expression[i].data(), expression_len, 0);
                 }
-            } else if (parser::where_clause_type == "ALL") {
+            } else if (parser::where_clause_type == "ALL" || parser::where_clause_type == "NO") {
                 // nothing to do
             }
         } catch (const std::system_error & e) {
@@ -235,15 +258,15 @@ int main() {
         }
 
         //      Wait for response
-        memset(buf, 0, 4096);
         try {
             std::cout << "waiting response" << std::endl;
+            memset(buf, 0, 4096);
             int bytesReceived = recv(sock, buf, 4096, 0);
             //      Display response
             std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";
         } catch (const std::system_error& e) {
             std::cout << "Can't get server response. Error massage: " << e.what() << std::endl;
-            continue;
+            exit(0);
         }
     } while(true);
 
