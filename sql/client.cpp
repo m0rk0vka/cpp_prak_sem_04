@@ -50,7 +50,6 @@ int main() {
         std::cout << "Connection Failed" << std::endl;
         return -1;
     }
-    std::cout << "cool" << std::endl;
     //  While loop:
     char buf[4096];
     std::string userInput;
@@ -88,9 +87,10 @@ int main() {
             continue;
         }
         //      Send to server
+        std::cout << "req_type = " << parser::request_type << "." << std::endl;
+        std::cout << "where_clause_type = " << parser::where_clause_type << "." << std::endl;
         try {
             if (parser::request_type == "SELECT") {
-                std::cout << "otpravka na server select" << std::endl;
                 int len_type = parser::request_type.size();
                 send(sock, &len_type, sizeof(int), 0);
                 send(sock, parser::request_type.data(), len_type, 0);
@@ -102,15 +102,12 @@ int main() {
                 send(sock, parser::request_select.name.data(), table_name_len, 0);
                 int vec_len = parser::request_select.fields.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_select.fields[i].size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_select.fields[i].data(), field_len, 0);
                 }
-                std::cout << "konez otpravki select na server" << std::endl;
             } else if (parser::request_type == "INSERT") {
-                std::cout << "otpravka na server insert" << std::endl;
                 parser::where_clause_type = "NO";
                 int len_type = parser::request_type.size();
                 send(sock, &len_type, sizeof(int), 0);
@@ -123,28 +120,21 @@ int main() {
                 send(sock, parser::request_insert.name.data(), table_name_len, 0);
                 int vec_len = parser::request_insert.fields_str.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_insert.fields_str[i].size();
-                    std::cout << "recv in cycle i = " << i << std::endl;
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_insert.fields_str[i].data(), field_len, 0);
                 }
                 vec_len = parser::request_insert.fields_num.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
-                    std::cout << "send in cycle i = " << i << std::endl;
                     send(sock, &parser::request_insert.fields_num[i], sizeof(long), 0);
                 }
                 vec_len = parser::request_insert.flags.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
-                    std::cout << "send in cycle i = " << i << std::endl;
                     send(sock, &parser::request_insert.flags[i], sizeof(int), 0);
                 }
-                std::cout << "konez otpravki insert na server" << std::endl;
             } else if (parser::request_type == "UPDATE") {
                 int len_type = parser::request_type.size();
                 send(sock, &len_type, sizeof(int), 0);
@@ -155,9 +145,9 @@ int main() {
                 int table_name_len = parser::request_update.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_update.name.data(), table_name_len, 0);
-                int field_len = parser::request_update.name.size();
+                int field_len = parser::request_update.field.size();
                 send(sock, &field_len, sizeof(int), 0);
-                send(sock, parser::request_update.name.data(), field_len, 0);
+                send(sock, parser::request_update.field.data(), field_len, 0);
                 int vec_len = parser::request_update.expression.size();
                 send(sock, &vec_len, sizeof(int), 0);
                 for (int i = 0; i < vec_len; ++i) {
@@ -176,7 +166,6 @@ int main() {
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_delete.name.data(), table_name_len, 0);
             } else if (parser::request_type == "CREATE") {
-                std::cout << "otpravka na server create" << std::endl;
                 parser::where_clause_type = "NO";
                 std::cout << parser::request_type.data() << std::endl;
                 int len_type = parser::request_type.size();
@@ -190,17 +179,13 @@ int main() {
                 send(sock, parser::request_create.name.data(), table_name_len, 0);
                 int vec_len = parser::request_create.fields_description.size();
                 send(sock, &vec_len, sizeof(int), 0);
-                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
-                    std::cout << "in cycle i = " << i << std::endl;
                     int field_len = parser::request_create.fields_description[i].field.size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_create.fields_description[i].field.data(), field_len, 0);
                     send(sock, &parser::request_create.fields_description[i].size, sizeof(long), 0);
                 }
-                std::cout << "konez otpravki create na server" << std::endl;
             } else if (parser::request_type == "DROP") {
-                std::cout << "otpravka na server drop" << std::endl;
                 parser::where_clause_type = "NO";
                 int len_type = parser::request_type.size();
                 send(sock, &len_type, sizeof(int), 0);
@@ -211,7 +196,6 @@ int main() {
                 int table_name_len = parser::request_drop.name.size();
                 send(sock, &table_name_len, sizeof(int), 0);
                 send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
-                std::cout << "konez otpravki drop na server" << std::endl;
             }
 //          WHERE-clause
             if (parser::where_clause_type == "LIKE") {
@@ -263,10 +247,19 @@ int main() {
         //      Wait for response
         try {
             std::cout << "waiting response" << std::endl;
+            int response_len;
+            int res = recv(sock, &response_len, 4, 0);
+            if (res == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
             memset(buf, 0, 4096);
-            recv(sock, buf, 4096, 0);
+            res = recv(sock, buf, response_len, 0);
+            if (res == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
             //      Display response
-            std::cout << "SERVER> " << std::string(buf) << std::endl;
+            std::string response = buf;
+            std::cout << "SERVER> " << response.data() << std::endl;
         } catch (const std::system_error& e) {
             std::cout << "Can't get server response. Error massage: " << e.what() << std::endl;
             exit(0);

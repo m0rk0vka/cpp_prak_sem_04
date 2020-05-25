@@ -60,213 +60,198 @@ int main()
     std::string response;
     response.clear();
     char buf[4096];
+    int res_recv;
 
     while (true)
     {
         //Wait for client send data
+        std::cout << "Well done, now waiting client message" << std::endl;
+        response.clear();
         try {
             memset(buf, 0, 4096);
-            std::cout << "take req_type" << std::endl;
             int len_buf;
-            recv(clientSocket, &len_buf, 4, 0);
-            recv(clientSocket, buf, len_buf, 0);
+            res_recv = recv(clientSocket, &len_buf, 4, 0);
+            if (res_recv == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
+            res_recv = recv(clientSocket, buf, len_buf, 0);
+            if (res_recv == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
             request_type = buf;
-            //std::cout << "req_type = " << request_type << " wow" << std::endl;
-            //std::cout << "take wh_type" << std::endl;
+            std::cout << "req_type = " << request_type << "." << std::endl;
             memset(buf, 0, 4096);
-            recv(clientSocket, &len_buf, 4, 0);
-            recv(clientSocket, buf, len_buf, 0);
+            res_recv = recv(clientSocket, &len_buf, 4, 0);
+            if (res_recv == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
+            res_recv = recv(clientSocket, buf, len_buf, 0);
+            if (res_recv == -1) {
+                throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
+            }
             where_clause_type = buf;
-            std::cout << "end types" << std::endl;
-        } catch (const std::logic_error & e) {
-            std::string err = e.what();
-            response = "You get an error. Server message: " + err + "\n";
-            send(clientSocket, &response, response.size(), 0);
-            close(clientSocket);
-            exit(0);
-        } catch (...) {
-            response = "Wtf error\n";
-            send(clientSocket, &response, response.size(), 0);
+            std::cout << "where_clause_type = " << where_clause_type << "." << std::endl;
+        } catch (const std::system_error & e) {
+            std::cout << e.what() << std::endl << "Close server." << std::endl;
             close(clientSocket);
             exit(0);
         }
         try {
             if (request_type == "SELECT") {
-                std::cout << "prinimai select" << std::endl;
                 request_select.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                recv(clientSocket, buf, table_name_len, 0);
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_select.name.append(buf);
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
-                std::cout << "recv before cycle" << std::endl;
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
-                    recv(clientSocket, &field_len, 4, 0);
-                    recv(clientSocket, buf, field_len, 0);
+                    res_recv = recv(clientSocket, &field_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, field_len, 0);
                     request_select.fields.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                std::cout << "zakanchivaem prinimat' select" << std::endl;
             } else if (request_type == "INSERT") {
-                std::cout << "prinimai insert" << std::endl;
                 request_insert.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                recv(clientSocket, buf, table_name_len, 0);
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_insert.name.append(buf);
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
-                std::cout << "recv before 1 cycle" << std::endl;
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
-                    std::cout << "recv in cycle i = " << i << std::endl;
-                    recv(clientSocket, &field_len, 4, 0);
-                    recv(clientSocket, buf, field_len, 0);
+                    res_recv = recv(clientSocket, &field_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, field_len, 0);
                     request_insert.fields_str.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                recv(clientSocket, &vec_len, 4, 0);
-                std::cout << "recv before 2 cycle" << std::endl;
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
-                    std::cout << "recv in cycle i = " << i << std::endl;
                     long field_num;
-                    recv(clientSocket, &field_num, 8, 0);
+                    res_recv = recv(clientSocket, &field_num, 8, 0);
                     request_insert.fields_num.push_back(field_num);
                 }
-                std::cout << "recv before 3 cycle" << std::endl;
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
-                    std::cout << "recv in cycle i = " << i << std::endl;
                     int flag;
-                    recv(clientSocket, &flag, 4, 0);
+                    res_recv = recv(clientSocket, &flag, 4, 0);
                     request_insert.flags.push_back(flag);
                 }
-                std::cout << "zakanchiva prinimat' insert" << std::endl;
             } else if (request_type == "UPDATE") {
-                std::cout << "prinimai update" << std::endl;
                 request_update.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                recv(clientSocket, buf, table_name_len, 0);
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_update.name.append(buf);
                 memset(buf, 0, 4096);
                 int field_len;
-                recv(clientSocket, &field_len, 4, 0);
-                recv(clientSocket, buf, field_len, 0);
+                res_recv = recv(clientSocket, &field_len, 4, 0);
+                res_recv = recv(clientSocket, buf, field_len, 0);
                 request_update.field.append(buf);
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int expression_len;
-                    recv(clientSocket, &expression_len, 4, 0);
-                    recv(clientSocket, buf, expression_len, 0);
+                    res_recv = recv(clientSocket, &expression_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, expression_len, 0);
                     request_update.expression.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
             } else if (request_type == "DELETE") {
-                std::cout << "prinimai delete" << std::endl;
                 request_delete.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                recv(clientSocket, buf, table_name_len, 0);
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_delete.name.append(buf);
                 memset(buf, 0, 4096);
             } else if (request_type == "CREATE") {
-                std::cout << "prinimai create" << std::endl;
                 request_create.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                std::cout << "recv table_name_len" << std::endl;
-                recv(clientSocket, buf, table_name_len, 0);
-                std::cout << "recv table_name" << std::endl;
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_create.name.append(buf);
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
-                std::cout << "recv before cycle" << std::endl;
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
-                    std::cout << "recv in cycle i = " << i << std::endl;
-                    recv(clientSocket, &field_len, 4, 0);
-                    recv(clientSocket, buf, field_len, 0);
+                    res_recv = recv(clientSocket, &field_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, field_len, 0);
                     des_tmp.field.append(buf);
                     memset(buf, 0, 4096);
-                    recv(clientSocket, &des_tmp.size, 8, 0);
+                    res_recv = recv(clientSocket, &des_tmp.size, 8, 0);
                     request_create.fields_description.push_back(std::move(des_tmp));
                     des_tmp.field.clear();
                 }
-                std::cout << "zakanchiva prinimat' create" << std::endl;
             } else if (request_type == "DROP") {
-                std::cout << "prinimai drop" << std::endl;
                 request_drop.clear();
                 memset(buf, 0, 4096);
                 int table_name_len;
-                recv(clientSocket, &table_name_len, 4, 0);
-                recv(clientSocket, buf, table_name_len, 0);
+                res_recv = recv(clientSocket, &table_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, table_name_len, 0);
                 request_drop.name.append(buf);
                 memset(buf, 0, 4096);
-                std::cout << "zakanchiva prinimat' drop" << std::endl;
             }
             if (where_clause_type == "LIKE") {
                 like_where_clause.clear();
                 memset(buf, 0, 4096);
                 int field_name_len;
-                recv(clientSocket, &field_name_len, 4, 0);
-                recv(clientSocket, buf, field_name_len, 0);
+                res_recv = recv(clientSocket, &field_name_len, 4, 0);
+                res_recv = recv(clientSocket, buf, field_name_len, 0);
                 like_where_clause.field_name.append(buf);
                 memset(buf, 0, 4096);
-                recv(clientSocket, &like_where_clause.use_not, 1, 0);
+                res_recv = recv(clientSocket, &like_where_clause.use_not, 1, 0);
                 int str_len;
-                recv(clientSocket, &str_len, 4, 0);
-                recv(clientSocket, buf, str_len, 0);
+                res_recv = recv(clientSocket, &str_len, 4, 0);
+                res_recv = recv(clientSocket, buf, str_len, 0);
                 like_where_clause.sample_string.append(buf);
                 memset(buf, 0, 4096);
             } else if (where_clause_type == "IN") {
                 in_where_clause.clear();
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int expression_len;
-                    recv(clientSocket, &expression_len, 4, 0);
-                    recv(clientSocket, buf, expression_len, 0);
+                    res_recv = recv(clientSocket, &expression_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, expression_len, 0);
                     in_where_clause.expression.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                recv(clientSocket, &in_where_clause.use_not, 1, 0);
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &in_where_clause.use_not, 1, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int const_str_len;
-                    recv(clientSocket, &const_str_len, 4, 0);
-                    recv(clientSocket, buf, const_str_len, 0);
+                    res_recv = recv(clientSocket, &const_str_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, const_str_len, 0);
                     in_where_clause.list_consts_str.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     long num;
-                    recv(clientSocket, &num, 8, 0);
+                    res_recv = recv(clientSocket, &num, 8, 0);
                     in_where_clause.list_consts_num.push_back(num);
                 }
             } else if (where_clause_type == "BOOL") {
                 bool_where_clause.clear();
                 memset(buf, 0, 4096);
                 int vec_len;
-                recv(clientSocket, &vec_len, 4, 0);
+                res_recv = recv(clientSocket, &vec_len, 4, 0);
                 for (int i = 0; i < vec_len; ++i) {
                     int expression_len;
-                    recv(clientSocket, &expression_len, 4, 0);
-                    recv(clientSocket, buf, expression_len, 0);
+                    res_recv = recv(clientSocket, &expression_len, 4, 0);
+                    res_recv = recv(clientSocket, buf, expression_len, 0);
                     bool_where_clause.expression.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
@@ -282,59 +267,54 @@ int main()
         }
         try {
             if (request_type == "SELECT") {
-                std::cout << "select" << std::endl;
                 std::string file_name = request_select.name.data();
                 Table table(file_name);
-                std::cout << "table done" << std::endl;
                 table.if_select(request_select.fields, where_clause_type, response);
-                std::cout << "end select" << std::endl;
             } else if (request_type == "INSERT") {
-                std::cout << "insert" << std::endl;
                 std::string file_name = request_insert.name.data();
                 Table table(file_name);
-                std::cout << "perehod k func" << std::endl;
                 table.if_insert(request_insert.fields_str, request_insert.fields_num, request_insert.flags, response);
-                std::cout << "end insert" << std::endl;
             } else if (request_type == "UPDATE") {
-                std::cout << "update" << std::endl;
                 std::string file_name = request_update.name.data();
                 Table table(file_name);
                 table.if_update(request_update.field, request_update.expression, where_clause_type, response);
-                std::cout << "end update" << std::endl;
             } else if (request_type == "DELETE") {
-                std::cout << "delete" << std::endl;
                 std::string file_name = request_delete.name.data();
                 Table table(file_name);
                 table.if_delete(where_clause_type, response);
-                std::cout << "end delete" << std::endl;
             } else if (request_type == "CREATE") {
                 std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
-                std::cout << "table done" << std::endl;
                 table.if_create(request_create.fields_description, response);
-                std::cout << "end create" << std::endl;
             } else if (request_type == "DROP") {
-                std::cout << "drop" << std::endl;
                 std::string file_name = request_drop.name.data();
                 Table table(file_name);
                 table.if_drop(response);
-                std::cout << "end drop" << std::endl;
             }
         } catch (const std::logic_error & e) {
+            std::cout << "catch logic error" << std::endl;
             std::string err = e.what();
-            response = "You get an error. Server message: " + err + "\n";
-            send(clientSocket, &response, response.size(), 0);
-            close(clientSocket);
-            exit(0);
-        } catch (...) {
-            response = "Wtf error\n";
-            send(clientSocket, &response, response.size(), 0);
-            close(clientSocket);
-            exit(0);
+            response = "You get an error. Server message: " + err;
+            int res_len = response.size();
+            int res_send = send(clientSocket, &res_len, sizeof(int), 0);
+            if (res_send == -1) {
+                std::cout << "send error" << std::endl;
+                //throw std::system_error(std::error_code(), "Send function finished with error code " + std::to_string(errno));
+            }
+            std::cout << "response = " << response.data() << std::endl;
+            res_send = send(clientSocket, response.data(), res_len, 0);
+            if (res_send == -1) {
+                std::cout << "send error" << std::endl;
+                //throw std::system_error(std::error_code(), "Send function finished with error code " + std::to_string(errno));
+            }
+            continue;
         }
         // Echo message back to client
-        send(clientSocket, &response, response.size(), 0);
+        int res_len = response.size();
+        //std::cout << "response = " << response.data() << std::endl;
+        send(clientSocket, &res_len, sizeof(int), 0);
+        send(clientSocket, response.data(), res_len, 0);
     }
     //goto wait_client;
     // Close the socket

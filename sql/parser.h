@@ -1087,7 +1087,7 @@ namespace parser{
             lexer::next();
             I();
         } else if (lexer::cur_lex_type == lex_type_t::UPDATE) {
-            request_type = "UPDETE";
+            request_type = "UPDATE";
             lexer::next();
             U();
         } else if (lexer::cur_lex_type == lex_type_t::DELETE) {
