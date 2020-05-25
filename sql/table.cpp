@@ -17,13 +17,11 @@
 
 Table::Table(std::string _file_name) {
     table_name = _file_name;
-    std::cout << "here" << std::endl;
-    file.open(table_name, std::ios_base::in);
+    file.open(table_name, std::ios_base::app);
     if(!file.is_open()) {
         std::cout << "lol" << std::endl;
         throw std::logic_error("Can't open the table");
     }
-    std::cout << "open" << std::endl;
 }
 
 Table::~Table() {
@@ -32,6 +30,7 @@ Table::~Table() {
 
 void Table::if_select(std::vector<std::string> & fields, std::string & where_type, std::string & response) {
     //ychest' esli *
+    file.seekg(0, std::ios_base::beg);
     std::string head, tmp, tmp1;
     std::getline(file, head);
     int i_tmp = 0;
@@ -59,16 +58,24 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
             }
             ++j;
         }
-        if (j == cnt_fields) {
+        if (j > cnt_fields) {//this place don't work
+            std::cout << "exit" << std::endl;
             throw std::logic_error("No such field");
         }
-        field_num.push_back(j - 1);
+        field_num.push_back(j);
     }
     std::string str;
-    std::stringstream ss;
+    std::cout << "field_num.size() = " << field_num.size() << std::endl;
+    for (int i = 0; i < field_num.size(); ++i) {
+        std::cout << field_num[i] << " ";
+    }
+    std::cout << std::endl;
     while (!file.eof()){
         std::getline(file, str);
-        //ss << str << '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        std::cout << "nach" << str << "kon" << std::endl;
         if (where_type == "ALL") {
             for (int i = 0; i < field_num.size(); ++i) {
                 int j = 0, k = 0;
@@ -85,23 +92,31 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
             }
             response += '\n';
         } else {
-            response = "I don't know how to work with where-clause type = " + tmp + '\n';
+            response = "I don't know how to work with where-clause type = " + where_type + '\n';
         }
     }
+    if (response.size() == 0) {
+        throw std::logic_error("Table is empty");
+    }
+    std::cout << "response = " << response << std::endl;
 }
 
 void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> & fields_num, std::vector<int> & flags, std::string & response) {
+    file.seekg(0, std::ios_base::beg);
     std::string str, head, tmp;
     std::getline(file, head);
+    std::cout << head << std::endl;
     int i_str = 0, i_num = 0, i_tmp = 0;
     while (head[i_tmp] != ' ') {
         tmp += head[i_tmp];
         ++i_tmp;
     }
+    std::cout << "getline done, size = " << tmp.data() << " get size = " << flags.size() << std::endl;
     if (atoi(tmp.data()) != flags.size()) {
         throw std::logic_error("Few input");
     }
     ++i_tmp;
+    std::cout << "before for" << std::endl;
     for (int i = 0; i < flags.size(); i++) {
         tmp.clear();
         while (head[i_tmp] != ' ') {
@@ -137,11 +152,13 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
         }
     }
     str += "\n";
+    std::cout << "after for" << std::endl;
     std::ofstream fout;
-    fout.open(table_name, std::ios::out);
-    fout << head;
+    fout.open(table_name, std::ios_base::out | std::ios_base::app);
+    fout << str;
     fout.flush();
     fout.close();
+    std::cout << "end zapic v file" << std::endl;
     response = "Insert to " + table_name + " was successful.";
 }
 
@@ -247,13 +264,16 @@ void Table::if_delete(std::string & where_type, std::string & response) {
     FILE* tmp_file = std::tmpfile();
     if (where_type == "ALL") {
         std::string head;
+        file.seekg(0, std::ios_base::beg);
         std::getline(file, head);
         head += '\n';
         fputs(head.data(), tmp_file);
         std::ofstream fout;
-        fout.open(table_name, std::ios::out);
+        fout.open(table_name, std::ios_base::trunc);
         int c;
+        std::rewind(tmp_file);
         while ((c = fgetc(tmp_file)) != EOF) {
+            std::cout << c;
             fout.put(c);
         }
         fout.flush();

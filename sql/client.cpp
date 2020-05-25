@@ -90,6 +90,7 @@ int main() {
         //      Send to server
         try {
             if (parser::request_type == "SELECT") {
+                std::cout << "otpravka na server select" << std::endl;
                 int len_type = parser::request_type.size();
                 send(sock, &len_type, sizeof(int), 0);
                 send(sock, parser::request_type.data(), len_type, 0);
@@ -101,11 +102,13 @@ int main() {
                 send(sock, parser::request_select.name.data(), table_name_len, 0);
                 int vec_len = parser::request_select.fields.size();
                 send(sock, &vec_len, sizeof(int), 0);
+                std::cout << "send before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len = parser::request_select.fields[i].size();
                     send(sock, &field_len, sizeof(int), 0);
                     send(sock, parser::request_select.fields[i].data(), field_len, 0);
                 }
+                std::cout << "konez otpravki select na server" << std::endl;
             } else if (parser::request_type == "INSERT") {
                 std::cout << "otpravka na server insert" << std::endl;
                 parser::where_clause_type = "NO";
@@ -261,9 +264,9 @@ int main() {
         try {
             std::cout << "waiting response" << std::endl;
             memset(buf, 0, 4096);
-            int bytesReceived = recv(sock, buf, 4096, 0);
+            recv(sock, buf, 4096, 0);
             //      Display response
-            std::cout << "SERVER> " << std::string(buf, bytesReceived) << "\r\n";
+            std::cout << "SERVER> " << std::string(buf) << std::endl;
         } catch (const std::system_error& e) {
             std::cout << "Can't get server response. Error massage: " << e.what() << std::endl;
             exit(0);

@@ -58,6 +58,7 @@ int main()
     struct_bool_where_clause bool_where_clause;
     //where_clause *where_clause_ptr;
     std::string response;
+    response.clear();
     char buf[4096];
 
     while (true)
@@ -101,6 +102,7 @@ int main()
                 memset(buf, 0, 4096);
                 int vec_len;
                 recv(clientSocket, &vec_len, 4, 0);
+                std::cout << "recv before cycle" << std::endl;
                 for (int i = 0; i < vec_len; ++i) {
                     int field_len;
                     recv(clientSocket, &field_len, 4, 0);
@@ -108,6 +110,7 @@ int main()
                     request_select.fields.push_back(std::string(buf));
                     memset(buf, 0, 4096);
                 }
+                std::cout << "zakanchivaem prinimat' select" << std::endl;
             } else if (request_type == "INSERT") {
                 std::cout << "prinimai insert" << std::endl;
                 request_insert.clear();
@@ -282,12 +285,14 @@ int main()
                 std::cout << "select" << std::endl;
                 std::string file_name = request_select.name.data();
                 Table table(file_name);
+                std::cout << "table done" << std::endl;
                 table.if_select(request_select.fields, where_clause_type, response);
                 std::cout << "end select" << std::endl;
             } else if (request_type == "INSERT") {
                 std::cout << "insert" << std::endl;
                 std::string file_name = request_insert.name.data();
                 Table table(file_name);
+                std::cout << "perehod k func" << std::endl;
                 table.if_insert(request_insert.fields_str, request_insert.fields_num, request_insert.flags, response);
                 std::cout << "end insert" << std::endl;
             } else if (request_type == "UPDATE") {
