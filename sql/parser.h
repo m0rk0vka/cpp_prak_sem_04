@@ -1,11 +1,13 @@
 #include "structs.h"
 #include <sstream>
 
-std::stringstream str_cin;
+int c1, c2;
+std::stringstream str_cin, str_like;
 
 enum lex_type_t {SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, FROM, INTO, SET, TABLE,
     TEXT, LONG, PLUS, MINUS, MULT, DIV, MOD, EQUALLY, GREAT, LESS, GREAT_EQUAL, LESS_EQUAL,
-    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, AND, OR, END, STR_VAL, COMMA, LONGNUM, IDENT};
+    NOT_EQUAL, OPEN, CLOSE, WHERE, NOT, LIKE, IN, ALL, AND, OR, END, STR_VAL, COMMA, LONGNUM, IDENT,
+    CHAR, PERCENT, UNDER, XOR, DASH};
 
 bool isal_num(int c) {
     return isalnum(c) || c == '_';
@@ -26,11 +28,11 @@ namespace lexer {
         if (c == EOF || c == '\n') {
             throw std::logic_error("Empty request");
         }
-        cur_lex_pos = 1;
+        lexer::cur_lex_pos = 1;
     }
 
     void next() {
-        cur_lex_text.clear();
+        lexer::cur_lex_text.clear();
         enum state_t { H, S, SE, SEL, SELE, SELEC, SELECT, I, IN, INS, INSE, INSER, INSERT,
             U, UP, UPD, UPDA, UPDAT, UPDATE, D, DE, DEL, DELE, DELET, DELETE, C, CR, CRE,
             CREA, CREAT, CREATE, DR, DRO, DROP, F, FR, FRO, FROM, INT, INTO, SET, T, TA, TAB,
@@ -97,10 +99,10 @@ namespace lexer {
                 } else if (isdigit(c)) {
                     state = LONGNUM;
                 } else if (c == '\n' || c == EOF) {
-                    cur_lex_type = lex_type_t::END;
+                    lexer::cur_lex_type = lex_type_t::END;
                     state = OK;
                 } else {
-                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(lexer::cur_lex_pos));
                 }
                 break;
 //          SELECT
@@ -110,7 +112,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -123,7 +125,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -134,7 +136,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -145,7 +147,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -156,7 +158,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -165,7 +167,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::SELECT;
+                    lexer::cur_lex_type = lex_type_t::SELECT;
                     state = OK;
                 }
                 break;
@@ -176,7 +178,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -189,7 +191,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IN; // word IN - not IDENT identifier
+                    lexer::cur_lex_type = lex_type_t::IN; // word IN - not IDENT identifier
                     state = OK;
                 }
                 break;
@@ -200,7 +202,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -211,7 +213,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -222,7 +224,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -231,7 +233,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::INSERT;
+                    lexer::cur_lex_type = lex_type_t::INSERT;
                     state = OK;
                 }
                 break;
@@ -242,7 +244,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -253,7 +255,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -264,7 +266,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -275,7 +277,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -286,7 +288,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -295,7 +297,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::UPDATE;
+                    lexer::cur_lex_type = lex_type_t::UPDATE;
                     state = OK;
                 }
                 break;
@@ -308,7 +310,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -319,7 +321,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -330,7 +332,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -341,7 +343,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -352,7 +354,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -361,7 +363,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::DELETE;
+                    lexer::cur_lex_type = lex_type_t::DELETE;
                     state = OK;
                 }
                 break;
@@ -372,7 +374,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -383,7 +385,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -394,7 +396,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -405,7 +407,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -416,7 +418,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -425,7 +427,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::CREATE;
+                    lexer::cur_lex_type = lex_type_t::CREATE;
                     state = OK;
                 }
                 break;
@@ -436,7 +438,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -447,7 +449,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -456,7 +458,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::DROP;
+                    lexer::cur_lex_type = lex_type_t::DROP;
                     state = OK;
                 }
                 break;
@@ -467,7 +469,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -478,7 +480,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -489,7 +491,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -498,7 +500,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::FROM;
+                    lexer::cur_lex_type = lex_type_t::FROM;
                     state = OK;
                 }
                 break;
@@ -509,7 +511,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -518,7 +520,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::INTO;
+                    lexer::cur_lex_type = lex_type_t::INTO;
                     state = OK;
                 }
                 break;
@@ -527,7 +529,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::SET;
+                    lexer::cur_lex_type = lex_type_t::SET;
                     state = OK;
                 }
                 break;
@@ -540,7 +542,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -551,7 +553,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -562,7 +564,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -573,7 +575,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -582,7 +584,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::TABLE;
+                    lexer::cur_lex_type = lex_type_t::TABLE;
                     state = OK;
                 }
                 break;
@@ -593,7 +595,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -604,7 +606,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -613,7 +615,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::TEXT;
+                    lexer::cur_lex_type = lex_type_t::TEXT;
                     state = OK;
                 }
                 break;
@@ -626,7 +628,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -637,7 +639,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -648,7 +650,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -657,7 +659,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::LONG;
+                    lexer::cur_lex_type = lex_type_t::LONG;
                     state = OK;
                 }
                 break;
@@ -666,7 +668,7 @@ namespace lexer {
                 if (isdigit(c)) {
                     //stai in LONGNUM
                 } else {
-                    cur_lex_type = lex_type_t::LONGNUM;
+                    lexer::cur_lex_type = lex_type_t::LONGNUM;
                     state = OK;
                 }
                 break;
@@ -675,7 +677,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     // stay in IDENT
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -686,7 +688,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -697,7 +699,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -708,7 +710,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -719,7 +721,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -728,7 +730,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::WHERE;
+                    lexer::cur_lex_type = lex_type_t::WHERE;
                     state = OK;
                 }
                 break;
@@ -739,7 +741,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -750,7 +752,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -759,7 +761,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::NOT;
+                    lexer::cur_lex_type = lex_type_t::NOT;
                     state = OK;
                 }
                 break;
@@ -770,7 +772,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -781,7 +783,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -790,7 +792,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::LIKE;
+                    lexer::cur_lex_type = lex_type_t::LIKE;
                     state = OK;
                 }
                 break;
@@ -803,7 +805,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -814,7 +816,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -823,7 +825,7 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::ALL;
+                    lexer::cur_lex_type = lex_type_t::ALL;
                     state = OK;
                 }
                 break;
@@ -834,7 +836,7 @@ namespace lexer {
             } else if (isal_num(c)) {
                 state = IDENT;
             } else {
-                cur_lex_type = lex_type_t::IDENT;
+                lexer::cur_lex_type = lex_type_t::IDENT;
                 state = OK;
             }
             break;
@@ -843,7 +845,7 @@ namespace lexer {
             if (isal_num(c)) {
                 state = IDENT;
             } else {
-                cur_lex_type = lex_type_t::AND;
+                lexer::cur_lex_type = lex_type_t::AND;
                 state = OK;
             }
             break;
@@ -854,7 +856,7 @@ namespace lexer {
                 } else if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::IDENT;
+                    lexer::cur_lex_type = lex_type_t::IDENT;
                     state = OK;
                 }
                 break;
@@ -863,102 +865,102 @@ namespace lexer {
                 if (isal_num(c)) {
                     state = IDENT;
                 } else {
-                    cur_lex_type = lex_type_t::OR;
+                    lexer::cur_lex_type = lex_type_t::OR;
                     state = OK;
                 }
                 break;
 //          COMMA
             case COM:
-                cur_lex_type = lex_type_t::COMMA;
+                lexer::cur_lex_type = lex_type_t::COMMA;
                 state = OK;
                 break;
 //          STR_VAL
             case START_S:
                 if (c == '\n') {
-                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(lexer::cur_lex_pos));
                 } else if (c == '\'') {
-                    throw std::logic_error("You input empty string between \'\' in position " + std::to_string(cur_lex_pos - 1));
+                    throw std::logic_error("You input empty string between \'\' in position " + std::to_string(lexer::cur_lex_pos - 1));
                 } else {
                     state = MIDDLE_S;
                 }
                 break;
             case MIDDLE_S:
                 if (c == '\n') {
-                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(lexer::cur_lex_pos));
                 } else if (c == '\'') {
                     state = END_S;
                 }
                 break;
             case END_S:
-                cur_lex_type = lex_type_t::STR_VAL;
+                lexer::cur_lex_type = lex_type_t::STR_VAL;
                 state = OK;
                 break;
 //          WHERE-clause
             case OP:
-                cur_lex_type = lex_type_t::OPEN;
+                lexer::cur_lex_type = lex_type_t::OPEN;
                 state = OK;
                 break;
             case CL:
-                cur_lex_type = lex_type_t::CLOSE;
+                lexer::cur_lex_type = lex_type_t::CLOSE;
                 state = OK;
                 break;
             case EQ:
-                cur_lex_type = lex_type_t::EQUALLY;
+                lexer::cur_lex_type = lex_type_t::EQUALLY;
                 state = OK;
                 break;
             case PL:
-                cur_lex_type = lex_type_t::PLUS;
+                lexer::cur_lex_type = lex_type_t::PLUS;
                 state = OK;
                 break;
             case MIN:
-                cur_lex_type = lex_type_t::MINUS;
+                lexer::cur_lex_type = lex_type_t::MINUS;
                 state = OK;
                 break;
             case MULT:
-                cur_lex_type = lex_type_t::MULT;
+                lexer::cur_lex_type = lex_type_t::MULT;
                 state = OK;
                 break;
             case DIV:
-                cur_lex_type = lex_type_t::DIV;
+                lexer::cur_lex_type = lex_type_t::DIV;
                 state = OK;
                 break;
             case MOD:
-                cur_lex_type = lex_type_t::MOD;
+                lexer::cur_lex_type = lex_type_t::MOD;
                 state = OK;
                 break;
             case GR:
                 if (c == '=') {
                     state = GR_EQ;
                 } else {
-                    cur_lex_type = lex_type_t::GREAT;
+                    lexer::cur_lex_type = lex_type_t::GREAT;
                     state = OK;
                 }
                 break;
             case GR_EQ:
-                cur_lex_type = lex_type_t::GREAT_EQUAL;
+                lexer::cur_lex_type = lex_type_t::GREAT_EQUAL;
                 state = OK;
                 break;
             case LS:
                 if (c == '=') {
                     state = LS_EQ;
                 } else {
-                    cur_lex_type = lex_type_t::LESS;
+                    lexer::cur_lex_type = lex_type_t::LESS;
                     state = OK;
                 }
                 break;
             case LS_EQ:
-                cur_lex_type = lex_type_t::LESS_EQUAL;
+                lexer::cur_lex_type = lex_type_t::LESS_EQUAL;
                 state = OK;
                 break;
             case NT:
                 if (c == '=') {
                     state = NT_EQ;
                 } else {
-                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(cur_lex_pos));
+                    throw std::logic_error("Unexpected caracter with code " + std::to_string(c) + " in position " + std::to_string(lexer::cur_lex_pos));
                 }
                 break;
             case NT_EQ:
-                cur_lex_type = lex_type_t::NOT_EQUAL;
+                lexer::cur_lex_type = lex_type_t::NOT_EQUAL;
                 state = OK;
                 break;
 //          OK
@@ -968,10 +970,91 @@ namespace lexer {
 
             if (state != OK) {
                 if (!isspace(c) || state == START_S) {
-                    cur_lex_text.push_back(c);
+                    lexer::cur_lex_text.push_back(c);
                 }
                 c = str_cin.get();
                 ++cur_lex_pos;
+            }
+        }
+    }
+}
+
+namespace like{
+    lex_type_t cur_lex_type;
+    int cur_lex_text, c;
+
+    void init() {
+        str_like.get();
+        c = str_like.get();
+    }
+
+    void next() {
+        enum state_t { H, CH, P, U, O, CL, X, D, OK } state = H;
+        while (state != OK) {
+            switch (state) {
+            case H:
+                if (c == '%') {
+                    state = P;
+                } else if (c == '_') {
+                    state = U;
+                } else if (c == '[') {
+                    state = O;
+                } else if (c == ']') {
+                    state = CL;
+                } else if (c == '^') {
+                    state = X;
+                } else if (c == '-') {
+                    state = D;
+                } else if (c == '\'') {
+                    cur_lex_type = lex_type_t::END;
+                    state = OK;
+                } else {
+                    state = CH;
+                }
+                break;
+
+            case CH:
+                cur_lex_type = lex_type_t::CHAR;
+                state = OK;
+                break;
+
+            case P:
+                cur_lex_type = lex_type_t::PERCENT;
+                state = OK;
+                break;
+
+            case U:
+                cur_lex_type = lex_type_t::UNDER;
+                state = OK;
+                break;
+
+            case O:
+                cur_lex_type = lex_type_t::OPEN;
+                state = OK;
+                break;
+
+            case CL:
+                cur_lex_type = lex_type_t::CLOSE;
+                state = OK;
+                break;
+
+            case X:
+                cur_lex_type = lex_type_t::XOR;
+                state = OK;
+                break;
+
+            case D:
+                cur_lex_type = lex_type_t::DASH;
+                state = OK;
+                break;
+
+            case OK:
+                break;
+            }
+
+            if (state != OK) {
+                cur_lex_text = c;
+                c = str_like.get();
             }
         }
     }
@@ -1025,10 +1108,6 @@ namespace parser{
     }
 
     void check_end() {
-        /*while (lexer::cur_lex_type != lex_type_t::END) {
-            lexer::next();
-            //std::cout << "type = " << lexer::cur_lex_type;
-        }*/
         if (lexer::cur_lex_type != lex_type_t::END) {
             throw std::logic_error("No end");
         }
@@ -1053,6 +1132,13 @@ namespace parser{
 //  WHERE-clause
     void W();
     void W_Like();
+    void S1();
+    void A();
+    void B();
+    void B1();
+    void B2();
+    void C1();
+    void D();
     void W_In();
     void W_In_Expression();
     void W_In_Long_Expression();
@@ -1469,8 +1555,157 @@ namespace parser{
         if (vec_lex[index_vec_lex].type != lex_type_t::STR_VAL) {
             throw std::logic_error("You must entry sample string after \'LIKE\'");
         }
+        str_like.clear();
+        str_like << vec_lex[index_vec_lex].text;
+        like::init();
+        like::next();
+        if (like::cur_lex_type == lex_type_t::CHAR) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::PERCENT) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::UNDER) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::OPEN) {
+            like::next();
+            A();
+            if (like::cur_lex_type != lex_type_t::CLOSE) {
+                throw std::logic_error("Incorrect syntax of string in LIKE clause");
+            }
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::XOR) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::DASH) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::CLOSE) {
+            like::next();
+            S1();
+        } else {
+            throw std::logic_error("Incorrect syntax of string in LIKE clause");
+        }
         like_where_clause.sample_string = vec_lex[index_vec_lex].text;
         ++index_vec_lex;
+    }
+
+    void S1() {
+        if (like::cur_lex_type == lex_type_t::CHAR) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::PERCENT) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::UNDER) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::OPEN) {
+            like::next();
+            A();
+            if (like::cur_lex_type != lex_type_t::CLOSE) {
+                throw std::logic_error("Incorrect syntax of string in LIKE clause");
+            }
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::XOR) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::DASH) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::CLOSE) {
+            like::next();
+            S1();
+        } else if (like::cur_lex_type == lex_type_t::END) {
+            // nothing to do
+        } else {
+            throw std::logic_error("Incorrect syntax of string in LIKE clause");
+        }
+    }
+
+    void A() {
+        if (like::cur_lex_type == lex_type_t::XOR) {
+            like::next();
+            B1();
+            C();
+        } else {
+            B1();
+            C();
+        }
+    }
+
+    void B1() {
+        if (like::cur_lex_type == lex_type_t::CHAR) {
+            c1 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::PERCENT) {
+            c1 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::UNDER) {
+            c1 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::OPEN) {
+            c1 = like::cur_lex_text;
+            like::next();
+        } else {
+            throw std::logic_error("Incorrect syntax of string in LIKE clause");
+        }
+    }
+
+    void C1() {
+        if (like::cur_lex_type == lex_type_t::DASH) {
+            like::next();
+            B2();
+            if (c1 > c2) {
+                throw std::logic_error("Incorrect syntax of string in LIKE clause.\nFirst character in range should be less or equal than second one");
+            }
+        } else {
+            D();
+        }
+    }
+
+    void B2() {
+        if (like::cur_lex_type == lex_type_t::CHAR) {
+            c2 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::PERCENT) {
+            c2 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::UNDER) {
+            c2 = like::cur_lex_text;
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::OPEN) {
+            c2 = like::cur_lex_text;
+            like::next();
+        } else {
+            throw std::logic_error("Incorrect syntax of string in LIKE clause");
+        }
+    }
+
+    void D() {
+        if (like::cur_lex_type == lex_type_t::CLOSE) {
+            // nothing to do
+        } else {
+            B();
+            D();
+        }
+    }
+
+    void B() {
+        if (like::cur_lex_type == lex_type_t::CHAR) {
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::PERCENT) {
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::UNDER) {
+            like::next();
+        } else if (like::cur_lex_type == lex_type_t::OPEN) {
+            like::next();
+        } else {
+            throw std::logic_error("Incorrect syntax of string in LIKE clause");
+        }
     }
 
     void W_In() {
