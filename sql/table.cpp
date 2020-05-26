@@ -28,7 +28,7 @@ Table::~Table() {
     file.close();
 }
 
-void Table::if_select(std::vector<std::string> & fields, std::string & where_type, std::string & response) {
+void Table::if_select(std::vector<std::string> & fields, std::string & response) {
     //ychest' esli *
     std::string head, tmp, tmp1;
     std::getline(file, head);
@@ -51,7 +51,7 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
             }
             ++i_tmp;
             if (head[i_tmp] == 'L') {
-                ++i_tmp;
+                i_tmp += 2;
             } else {
                 while (head[i_tmp] != ' ') {
                     ++i_tmp;
@@ -74,7 +74,7 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
                 }
                 ++k;
                 if (head[k] == 'L') {
-                    ++k;
+                    k += 2;
                 } else {
                     while (head[k] != ' ') {
                         ++k;
@@ -99,24 +99,20 @@ void Table::if_select(std::vector<std::string> & fields, std::string & where_typ
         if (strcmp(str.data(), "") == 0) {
             break;
         }
-        if (where_type == "ALL") {
-            for (int i = 0; i < field_num.size(); ++i) {
-                int j = 0, k = 0;
-                while (j <= field_num[i]) {
-                    tmp.clear();
-                    while (str[k] != ' ') {
-                        tmp += str[k];
-                        ++k;
-                    }
+        for (int i = 0; i < field_num.size(); ++i) {
+            int j = 0, k = 0;
+            while (j <= field_num[i]) {
+                tmp.clear();
+                while (str[k] != ' ') {
+                    tmp += str[k];
                     ++k;
-                    ++j;
                 }
-                response += tmp + ' ';
+                ++k;
+                ++j;
             }
-            response += '\n';
-        } else {
-            response = "I don't know how to work with where-clause type = " + where_type + '\n';
+            response += tmp + ' ';
         }
+        response += '\n';
     }
     if (response.size() == 0) {
         throw std::logic_error("Table is empty");
@@ -145,8 +141,7 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
             if (head[i_tmp] != 'L') {
                 throw std::logic_error("Bad field type");
             } else {
-                ++i_tmp;
-                ++i_tmp;
+                i_tmp += 2;
             }
             long num = fields_num[i_num];
             str += std::to_string(num) + " ";
@@ -178,7 +173,7 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
     response = "Insert to " + table_name + " was successful.";
 }
 
-void Table::if_update(std::string & field, std::vector<std::string> & expression, std::string & where_type, std::string & response) {
+void Table::if_update(std::string & field, std::vector<std::string> & expression, std::string & response) {
     std::string head, tmp, tmp1;
     FILE* tmp_file = std::tmpfile();
     std::getline(file, head);
@@ -203,7 +198,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         }
         ++k;
         if (head[k] == 'L') {
-            ++k;
+            k += 2;
         } else {
             while (head[k] != ' ') {
                 ++k;
@@ -221,7 +216,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     }
     --j;
     std::string str;
-    std::stack<long> stack_num;
+    std::stack<long> tmp_stack;
     std::unordered_map<std::string, std::string> tmp_map;
     while (!file.eof()) {
         str.clear();
@@ -229,68 +224,66 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (strcmp(str.data(), "") == 0) {
             break;
         }
-        if (where_type == "ALL") {
-            tmp_map.clear();
-            int k = 0;
-            i_tmp = 0;
-            while (k < cnt_fields) {
-                tmp = "";
-                while (str[i_tmp] != ' ') {
-                    tmp += str[i_tmp];
-                    ++i_tmp;
-                }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
                 ++i_tmp;
-                tmp_map[fields_vec[k]] = tmp;
-                ++k;
             }
-            for (const std::string & item : expression) {
-                if (isalpha(item[0]) || item[0] == '_') {
-                    stack_num.push(strtol(tmp_map[item].data(), nullptr, 10));
-                } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
-                    stack_num.push(strtol(item.data(), nullptr, 10));
-                } else if (item == "+") {
-                    long op2 = stack_num.top();
-                    stack_num.pop();
-                    long op1 = stack_num.top();
-                    stack_num.pop();
-                    stack_num.push(op1 + op2);
-                } else if (item == "-") {
-                    long op2 = stack_num.top();
-                    stack_num.pop();
-                    long op1 = stack_num.top();
-                    stack_num.pop();
-                    stack_num.push(op1 - op2);
-                } else if (item == "*") {
-                    long op2 = stack_num.top();
-                    stack_num.pop();
-                    long op1 = stack_num.top();
-                    stack_num.pop();
-                    stack_num.push(op1 * op2);
-                } else if (item == "/") {
-                    long op2 = stack_num.top();
-                    stack_num.pop();
-                    long op1 = stack_num.top();
-                    stack_num.pop();
-                    stack_num.push(op1 / op2);
-                } else {
-                    long op2 = stack_num.top();
-                    stack_num.pop();
-                    long op1 = stack_num.top();
-                    stack_num.pop();
-                    stack_num.push(op1 % op2);
-                }
-            }
-            tmp_map[field.data()] = std::to_string(stack_num.top());
-            stack_num.pop();
-            //ostalos' menat' v file
-            std::string str_tmp = "";
-            for (int i = 0; i < fields_vec.size(); ++i) {
-                str_tmp += tmp_map[fields_vec[i]] + " ";
-            }
-            str_tmp += '\n';
-            fputs(str_tmp.data(), tmp_file);
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
         }
+        for (const std::string & item : expression) {
+            if (isalpha(item[0]) || item[0] == '_') {
+                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+            } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                tmp_stack.push(strtol(item.data(), nullptr, 10));
+            } else if (item == "+") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 + op2);
+            } else if (item == "-") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 - op2);
+            } else if (item == "*") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 * op2);
+            } else if (item == "/") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 / op2);
+            } else {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 % op2);
+            }
+        }
+        tmp_map[field.data()] = std::to_string(tmp_stack.top());
+        tmp_stack.pop();
+        std::string str_tmp = "";
+        for (int i = 0; i < fields_vec.size(); ++i) {
+            str_tmp += tmp_map[fields_vec[i]] + " ";
+        }
+        str_tmp += '\n';
+        fputs(str_tmp.data(), tmp_file);
     }
+
     std::ofstream fout;
     fout.open(table_name, std::ios_base::trunc);
     int c;
@@ -304,23 +297,242 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     response = "Update " + table_name + " was successful.";
 }
 
-void Table::if_delete(std::string & where_type, std::string & response) {
+void Table::if_delete(std::string & response) {
     FILE* tmp_file = std::tmpfile();
-    if (where_type == "ALL") {
-        std::string head;
-        std::getline(file, head);
-        head += '\n';
-        fputs(head.data(), tmp_file);
-        std::ofstream fout;
-        fout.open(table_name, std::ios_base::trunc);
-        int c;
-        std::rewind(tmp_file);
-        while ((c = fgetc(tmp_file)) != EOF) {
-            fout.put(c);
-        }
-        fout.flush();
-        fout.close();
+    std::string head;
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
     }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+}
+
+void Table::if_delete(struct_like_where_clause & where_clause, std::string & response) {
+    FILE* tmp_file = std::tmpfile();
+    std::string head;
+    std::getline(file, head);
+    head += '\n';
+    std::string tmp;
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        ++i_tmp;
+    }
+    ++i_tmp;
+    bool flag = false;
+    int j = 0;
+    while (i_tmp < head.size()) {
+        tmp.clear();
+        while (head[i_tmp] != ' ') {
+            tmp += head[i_tmp];
+            ++i_tmp;
+        }
+        ++i_tmp;
+        if (strcmp(tmp.data(), where_clause.field_name.data()) == 0) {
+            flag = true;
+        }
+        if (head[i_tmp] == 'L') {
+            i_tmp += 2;
+            if (flag) {
+                throw std::logic_error("Field type in WHERE-clause must be TEXT");
+            }
+        } else {
+            while (head[i_tmp] != ' ') {
+                ++i_tmp;
+            }
+            ++i_tmp;
+        }
+        if (!flag) {
+            ++j;
+        }
+    }
+    if (!flag) {
+        throw std::logic_error("No such field");
+    }
+    fputs(head.data(), tmp_file);
+    std::string str;
+    while (!file.eof()) {
+        std::getline(file, str);
+        str += '\n';
+        int k = 0;
+        i_tmp = 0;
+        while (i_tmp < str.size()) {
+            tmp.clear();
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (k == j) {
+                break;
+            } else {
+                ++k;
+            }
+        }
+        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+            fputs(str.data(), tmp_file);
+        }
+    }
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+}
+
+void Table::if_delete(struct_in_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    FILE* tmp_file = std::tmpfile();
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0;
+    int k = i_tmp;
+    while (j < cnt_fields) {
+        tmp1.clear();
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        if (head[k] == 'L') {
+            k += 2;
+        } else {
+            while (head[k] != ' ') {
+                ++k;
+            }
+            ++k;
+        }
+        fields_vec.push_back(tmp1.data());
+        ++j;
+    }
+    std::string str;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        str.clear();
+        std::getline(file, str);
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+            str += '\n';
+            fputs(str.data(), tmp_file);
+        }
+    }
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+}
+
+void Table::if_delete(struct_bool_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    FILE* tmp_file = std::tmpfile();
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0;
+    int k = i_tmp;
+    while (j < cnt_fields) {
+        tmp1.clear();
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        if (head[k] == 'L') {
+            k += 2;
+        } else {
+            while (head[k] != ' ') {
+                ++k;
+            }
+            ++k;
+        }
+        fields_vec.push_back(tmp1.data());
+        ++j;
+    }
+    std::string str;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        str.clear();
+        std::getline(file, str);
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_bool(tmp_map, where_clause.expression)) {
+            str += '\n';
+            fputs(str.data(), tmp_file);
+        }
+    }
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
     std::fclose(tmp_file);
 }
 
@@ -354,3 +566,254 @@ void Table::if_drop(std::string & response) {
         response = "Drop " + table_name + " was successful.";
     }
 }
+
+bool Table::if_like(std::string & str, int i_str, std::string & sample_string, int i_smpl_str) {
+    int i_tmp1 = i_str, i_tmp2 = i_smpl_str, len_str = str.size(), len_smpl_str = sample_string.size();
+    while (i_tmp1 < len_str && i_tmp2 < len_smpl_str) {
+        if (sample_string[i_smpl_str] == '%') {
+            ++i_smpl_str;
+            if (i_tmp2 == len_smpl_str) {
+                return true;
+            }
+            while (i_tmp1 < len_str) {
+                if (if_like(str, i_tmp1, sample_string, i_tmp2)) {
+                    return true;
+                }
+                ++i_str;
+            }
+            return false;
+        } else if (sample_string[i_smpl_str] == '_') {
+            ++i_str;
+            ++i_smpl_str;
+        } else if (sample_string[i_smpl_str] == '[') {
+            ++i_smpl_str;
+            if (sample_string[i_smpl_str] == '^') {
+                ++i_smpl_str;
+                if (sample_string[i_smpl_str + 1] == '-') {
+                    i_smpl_str += 2;
+                    if (str[i_str] >= sample_string[i_smpl_str - 2] && str[i_str] <= sample_string[i_smpl_str]) {
+                        return false;
+                    }
+                    ++i_str;
+                    i_smpl_str += 2;
+                } else {
+                    while (sample_string[i_smpl_str] != ']') {
+                        if (str[i_str] == sample_string[i_smpl_str]) {
+                            return false;
+                        }
+                        ++i_smpl_str;
+                    }
+                    ++i_str;
+                    ++i_smpl_str;
+                }
+            } else {
+                if (sample_string[i_smpl_str + 1] == '-') {
+                    i_smpl_str += 2;
+                    if (str[i_str] < sample_string[i_smpl_str - 2] || str[i_str] > sample_string[i_smpl_str]) {
+                        return false;
+                    }
+                    ++i_str;
+                    i_smpl_str += 2;
+                } else {
+                    bool flag = false;
+                    while (sample_string[i_smpl_str] != ']') {
+                        if (str[i_str] == sample_string[i_smpl_str]) {
+                            flag = true;
+                        }
+                        ++i_smpl_str;
+                    }
+                    if (!flag) {
+                        return false;
+                    }
+                    ++i_str;
+                    ++i_smpl_str;
+                }
+            }
+        } else {
+            if (str[i_str] != sample_string[i_smpl_str]) {
+                return false;
+            }
+            ++i_str;
+            ++i_smpl_str;
+        }
+    }
+    if (i_tmp1 == len_str && i_tmp2 == len_smpl_str) {
+        return true;
+    } /*else if (i_tmp2 != len_smpl_str) {
+        if (sample_string[i_smpl_str] == '%') {
+            return like(iter1, ++i_smpl_str, len_str, len_smpl_str);
+        } else {
+            return false;
+        }
+    }*/
+    return false;
+}
+
+bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression, std::vector<std::string> & list_consts_str, std::vector<long> & list_consts_num) {
+    std::stack<long> tmp_stack;
+    for (const std::string & item : expression) {
+        if (isalpha(item[0]) || item[0] == '_') {
+            tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+        } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+            tmp_stack.push(strtol(item.data(), nullptr, 10));
+        } else if (item == "+") {
+            long op2 = tmp_stack.top();
+            tmp_stack.pop();
+            long op1 = tmp_stack.top();
+            tmp_stack.pop();
+            tmp_stack.push(op1 + op2);
+        } else if (item == "-") {
+            long op2 = tmp_stack.top();
+            tmp_stack.pop();
+            long op1 = tmp_stack.top();
+            tmp_stack.pop();
+            tmp_stack.push(op1 - op2);
+        } else if (item == "*") {
+            long op2 = tmp_stack.top();
+            tmp_stack.pop();
+            long op1 = tmp_stack.top();
+            tmp_stack.pop();
+            tmp_stack.push(op1 * op2);
+        } else if (item == "/") {
+            long op2 = tmp_stack.top();
+            tmp_stack.pop();
+            long op1 = tmp_stack.top();
+            tmp_stack.pop();
+            tmp_stack.push(op1 / op2);
+        } else {
+            long op2 = tmp_stack.top();
+            tmp_stack.pop();
+            long op1 = tmp_stack.top();
+            tmp_stack.pop();
+            tmp_stack.push(op1 % op2);
+        }
+    }
+    long tmp = tmp_stack.top();
+    tmp_stack.pop();
+    if (std::find(list_consts_num.begin(), list_consts_num.end(), tmp) == list_consts_num.end()) {
+        return true;
+    } else if (std::find(list_consts_str.begin(), list_consts_str.end(), std::to_string(tmp)) == list_consts_str.end()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Table::if_bool(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression) {
+    std::stack<long> tmp_stack;
+    bool flag = true;
+    for (const std::string & item : expression) {
+        if (flag && (item != "AND") && (item != "OR") && (item != "NOT")) {
+            if (isalpha(item[0]) || item[0] == '_') {
+                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+            } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1)) {
+                tmp_stack.push(strtol(item.data(), nullptr, 10));
+            }
+            flag = false;
+        } else {
+            if (((isalpha(item[0])) && (item != "AND") && (item != "OR") && (item != "NOT")) || (item[0] == '_')) {
+                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+            } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1) || item[0] == '\'') {//for what ' ?
+                tmp_stack.push(strtol(item.data(), nullptr, 10));
+            } else if (item == "+") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 + op2);
+            } else if (item == "-") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 - op2);
+            } else if (item == "*") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 * op2);
+            } else if (item == "/") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 / op2);
+            } else if (item == "%") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 % op2);
+            } else if (item == "AND") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 && op2);
+            } else if (item == "OR") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 || op2);
+            } else if (item == "NOT") {
+                long op = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(!op);
+            } else if (item == "=") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 == op2);
+                flag = true;
+            } else if (item == ">") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 > op2);
+                flag = true;
+            } else if (item == "<") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 < op2);
+                flag = true;
+            } else if (item == ">=") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 >= op2);
+                flag = true;
+            } else if (item == "<=") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 <= op2);
+                flag = true;
+            } else if (item == "!=") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 != op2);
+                flag = true;
+            }
+        }
+    }
+    return tmp_stack.top();
+}
+
+
+
+
+
+
+
+
+

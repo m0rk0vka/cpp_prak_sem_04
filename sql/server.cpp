@@ -56,7 +56,6 @@ int main()
     struct_like_where_clause like_where_clause;
     struct_in_where_clause in_where_clause;
     struct_bool_where_clause bool_where_clause;
-    //where_clause *where_clause_ptr;
     std::string response;
     response.clear();
     char buf[4096];
@@ -269,7 +268,11 @@ int main()
             if (request_type == "SELECT") {
                 std::string file_name = request_select.name.data();
                 Table table(file_name);
-                table.if_select(request_select.fields, where_clause_type, response);
+                if (where_clause_type == "ALL") {
+                    table.if_select(request_select.fields, response);
+                } else {
+
+                }
             } else if (request_type == "INSERT") {
                 std::string file_name = request_insert.name.data();
                 Table table(file_name);
@@ -277,11 +280,23 @@ int main()
             } else if (request_type == "UPDATE") {
                 std::string file_name = request_update.name.data();
                 Table table(file_name);
-                table.if_update(request_update.field, request_update.expression, where_clause_type, response);
+                if (where_clause_type == "ALL") {
+                    table.if_update(request_update.field, request_update.expression, response);
+                } else {
+
+                }
             } else if (request_type == "DELETE") {
                 std::string file_name = request_delete.name.data();
                 Table table(file_name);
-                table.if_delete(where_clause_type, response);
+                if (where_clause_type == "ALL") {
+                    table.if_delete(response);
+                } else if (where_clause_type == "LIKE") {
+                    table.if_delete(like_where_clause, response);
+                } else if (where_clause_type == "IN") {
+                    table.if_delete(in_where_clause, response);
+                } else if (where_clause_type == "BOOL") {
+                    table.if_delete(bool_where_clause, response);
+                }
             } else if (request_type == "CREATE") {
                 std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
