@@ -29,7 +29,6 @@ Table::~Table() {
 }
 
 void Table::if_select(std::vector<std::string> & fields, std::string & response) {
-    //ychest' esli *
     std::string head, tmp, tmp1;
     std::getline(file, head);
     int i_tmp = 0;
@@ -113,6 +112,403 @@ void Table::if_select(std::vector<std::string> & fields, std::string & response)
             response += tmp + ' ';
         }
         response += '\n';
+    }
+    if (response.size() == 0) {
+        throw std::logic_error("Table is empty");
+    }
+}
+
+void Table::if_select(std::vector<std::string> & fields, struct_like_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    std::getline(file, head);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<int> field_num;
+    int j, field_j, cmp = 1;
+    if (fields.size() == 0) {//if star
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            if (strcmp(tmp1.data(), where_clause.field_name.data()) == 0){
+                cmp = 0;
+                field_j = j;
+            }
+            field_num.push_back(j);
+            ++j;
+        }
+        if (cmp == 1) {
+            throw std::logic_error("No such field");
+        }
+    } else {
+        for (int i = 0; i < fields.size(); i++) {
+            j = 0;
+            tmp = fields[i].data();
+            int k = i_tmp;
+            while (j < cnt_fields) {
+                tmp1.clear();
+                while (head[k] != ' ') {
+                    tmp1 += head[k];
+                    ++k;
+                }
+                ++k;
+                if (head[k] == 'L') {
+                    k += 2;
+                } else {
+                    while (head[k] != ' ') {
+                        ++k;
+                    }
+                    ++k;
+                }
+                if (strcmp(tmp1.data(), tmp.data()) == 0){
+                    break;
+                }
+                ++j;
+            }
+            if (j > cnt_fields) {//this place don't work
+                throw std::logic_error("No such field");
+            }
+            field_num.push_back(j);
+        }
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            if (strcmp(tmp1.data(), where_clause.field_name.data()) == 0){
+                cmp = 0;
+                field_j = j;
+            }
+            ++j;
+        }
+        if (cmp == 1) {
+            throw std::logic_error("No such field");
+        }
+    }
+    std::string str;
+    response = "Select table from " + table_name + " :\n";
+    while (!file.eof()){
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        int j = 0;
+        i_tmp = 0;
+        while (str[i_tmp] < str.size()) {
+            tmp.clear();
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (field_j == j) {
+                break;
+            }
+            ++j;
+        }
+        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+            for (int i = 0; i < field_num.size(); ++i) {
+                int j = 0, k = 0;
+                while (j <= field_num[i]) {
+                    tmp.clear();
+                    while (str[k] != ' ') {
+                        tmp += str[k];
+                        ++k;
+                    }
+                    ++k;
+                    ++j;
+                }
+                response += tmp + ' ';
+            }
+            response += '\n';
+        }
+    }
+    if (response.size() == 0) {
+        throw std::logic_error("Table is empty");
+    }
+}
+
+void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    std::getline(file, head);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<int> field_num;
+    std::vector<std::string> fields_vec;
+    int j;
+    if (fields.size() == 0) {//if star
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            field_num.push_back(j);
+            fields_vec.push_back(tmp1.data());
+            ++j;
+        }
+    } else {
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            fields_vec.push_back(tmp1.data());
+            ++j;
+        }
+        for (int i = 0; i < fields.size(); i++) {
+            j = 0;
+            tmp = fields[i].data();
+            int k = i_tmp;
+            while (j < cnt_fields) {
+                tmp1.clear();
+                while (head[k] != ' ') {
+                    tmp1 += head[k];
+                    ++k;
+                }
+                ++k;
+                if (head[k] == 'L') {
+                    k += 2;
+                } else {
+                    while (head[k] != ' ') {
+                        ++k;
+                    }
+                    ++k;
+                }
+                if (strcmp(tmp1.data(), tmp.data()) == 0){
+                    break;
+                }
+                ++j;
+            }
+            if (j > cnt_fields) {//this place don't work
+                throw std::logic_error("No such field");
+            }
+            field_num.push_back(j);
+        }
+    }
+    std::string str;
+    std::unordered_map<std::string, std::string> tmp_map;
+    response = "Select table from " + table_name + " :\n";
+    while (!file.eof()){
+        str.clear();
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+            for (int i = 0; i < field_num.size(); ++i) {
+                int j = 0, k = 0;
+                while (j <= field_num[i]) {
+                    tmp.clear();
+                    while (str[k] != ' ') {
+                        tmp += str[k];
+                        ++k;
+                    }
+                    ++k;
+                    ++j;
+                }
+                response += tmp + ' ';
+            }
+            response += '\n';
+        }
+    }
+    if (response.size() == 0) {
+        throw std::logic_error("Table is empty");
+    }
+}
+
+void Table::if_select(std::vector<std::string> & fields, struct_bool_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    std::getline(file, head);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<int> field_num;
+    std::vector<std::string> fields_vec;
+    int j;
+    if (fields.size() == 0) {//if star
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            field_num.push_back(j);
+            fields_vec.push_back(tmp1.data());
+            ++j;
+        }
+    } else {
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            fields_vec.push_back(tmp1.data());
+            ++j;
+        }
+        for (int i = 0; i < fields.size(); i++) {
+            j = 0;
+            tmp = fields[i].data();
+            int k = i_tmp;
+            while (j < cnt_fields) {
+                tmp1.clear();
+                while (head[k] != ' ') {
+                    tmp1 += head[k];
+                    ++k;
+                }
+                ++k;
+                if (head[k] == 'L') {
+                    k += 2;
+                } else {
+                    while (head[k] != ' ') {
+                        ++k;
+                    }
+                    ++k;
+                }
+                if (strcmp(tmp1.data(), tmp.data()) == 0){
+                    break;
+                }
+                ++j;
+            }
+            if (j > cnt_fields) {//this place don't work
+                throw std::logic_error("No such field");
+            }
+            field_num.push_back(j);
+        }
+    }
+    std::string str;
+    std::unordered_map<std::string, std::string> tmp_map;
+    response = "Select table from " + table_name + " :\n";
+    while (!file.eof()){
+        str.clear();
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_bool(tmp_map, where_clause.expression)) {
+            for (int i = 0; i < field_num.size(); ++i) {
+                int j = 0, k = 0;
+                while (j <= field_num[i]) {
+                    tmp.clear();
+                    while (str[k] != ' ') {
+                        tmp += str[k];
+                        ++k;
+                    }
+                    ++k;
+                    ++j;
+                }
+                response += tmp + ' ';
+            }
+            response += '\n';
+        }
     }
     if (response.size() == 0) {
         throw std::logic_error("Table is empty");
@@ -214,7 +610,6 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     if (cmp == 1) {
         throw std::logic_error("No such field");
     }
-    --j;
     std::string str;
     std::stack<long> tmp_stack;
     std::unordered_map<std::string, std::string> tmp_map;
@@ -297,6 +692,402 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     response = "Update " + table_name + " was successful.";
 }
 
+void Table::if_update(std::string & field, std::vector<std::string> & expression, struct_like_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    FILE* tmp_file = std::tmpfile();
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0, field_j;
+    int cmp = 1, cmp1 = 1;
+    int k = i_tmp;
+    while (j < cnt_fields) {
+        tmp1.clear();
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        if (head[k] == 'L') {
+            k += 2;
+        } else {
+            while (head[k] != ' ') {
+                ++k;
+            }
+            ++k;
+        }
+        fields_vec.push_back(tmp1.data());
+        if (strcmp(tmp1.data(), field.data()) == 0){
+            cmp = 0;
+        }
+        if (strcmp(tmp1.data(), where_clause.field_name.data()) == 0){
+            cmp1 = 0;
+            field_j = j;
+        }
+        ++j;
+    }
+    if (cmp == 1 || cmp1 == 1) {
+        throw std::logic_error("No such field");
+    }
+    std::string str;
+    std::stack<long> tmp_stack;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        str.clear();
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        int j = 0;
+        i_tmp = 0;
+        while (str[i_tmp] < str.size()) {
+            tmp.clear();
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (field_j == j) {
+                break;
+            }
+            ++j;
+        }
+        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+            tmp_map.clear();
+            int k = 0;
+            i_tmp = 0;
+            while (k < cnt_fields) {
+                tmp = "";
+                while (str[i_tmp] != ' ') {
+                    tmp += str[i_tmp];
+                    ++i_tmp;
+                }
+                ++i_tmp;
+                tmp_map[fields_vec[k]] = tmp;
+                ++k;
+            }
+            for (const std::string & item : expression) {
+                if (isalpha(item[0]) || item[0] == '_') {
+                    tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+                } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                    tmp_stack.push(strtol(item.data(), nullptr, 10));
+                } else if (item == "+") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 + op2);
+                } else if (item == "-") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 - op2);
+                } else if (item == "*") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 * op2);
+                } else if (item == "/") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 / op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 % op2);
+                }
+            }
+            tmp_map[field.data()] = std::to_string(tmp_stack.top());
+            tmp_stack.pop();
+            std::string str_tmp = "";
+            for (int i = 0; i < fields_vec.size(); ++i) {
+                str_tmp += tmp_map[fields_vec[i]] + " ";
+            }
+            str_tmp += '\n';
+            fputs(str_tmp.data(), tmp_file);
+        }
+    }
+
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+    response = "Update " + table_name + " was successful.";
+}
+
+void Table::if_update(std::string & field, std::vector<std::string> & expression, struct_in_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    FILE* tmp_file = std::tmpfile();
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0;
+    int cmp = 1;
+    int k = i_tmp;
+    while (j < cnt_fields) {
+        tmp1.clear();
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        if (head[k] == 'L') {
+            k += 2;
+        } else {
+            while (head[k] != ' ') {
+                ++k;
+            }
+            ++k;
+        }
+        fields_vec.push_back(tmp1.data());
+        if (strcmp(tmp1.data(), field.data()) == 0){
+            cmp = 0;
+        }
+        ++j;
+    }
+    if (cmp == 1) {
+        throw std::logic_error("No such field");
+    }
+    std::string str;
+    std::stack<long> tmp_stack;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        str.clear();
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+            for (const std::string & item : expression) {
+                if (isalpha(item[0]) || item[0] == '_') {
+                    tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+                } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                    tmp_stack.push(strtol(item.data(), nullptr, 10));
+                } else if (item == "+") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 + op2);
+                } else if (item == "-") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 - op2);
+                } else if (item == "*") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 * op2);
+                } else if (item == "/") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 / op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 % op2);
+                }
+            }
+            tmp_map[field.data()] = std::to_string(tmp_stack.top());
+            tmp_stack.pop();
+            std::string str_tmp = "";
+            for (int i = 0; i < fields_vec.size(); ++i) {
+                str_tmp += tmp_map[fields_vec[i]] + " ";
+            }
+            str_tmp += '\n';
+            fputs(str_tmp.data(), tmp_file);
+        }
+    }
+
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+    response = "Update " + table_name + " was successful.";
+}
+
+void Table::if_update(std::string & field, std::vector<std::string> & expression, struct_bool_where_clause & where_clause, std::string & response) {
+    std::string head, tmp, tmp1;
+    FILE* tmp_file = std::tmpfile();
+    std::getline(file, head);
+    head += '\n';
+    fputs(head.data(), tmp_file);
+    int i_tmp = 0;
+    while (head[i_tmp] != ' ') {
+        tmp += head[i_tmp];
+        ++i_tmp;
+    }
+    ++i_tmp;
+    int cnt_fields = atoi(tmp.data());
+    std::vector<std::string> fields_vec;
+    int j = 0;
+    int cmp = 1;
+    int k = i_tmp;
+    while (j < cnt_fields) {
+        tmp1.clear();
+        while (head[k] != ' ') {
+            tmp1 += head[k];
+            ++k;
+        }
+        ++k;
+        if (head[k] == 'L') {
+            k += 2;
+        } else {
+            while (head[k] != ' ') {
+                ++k;
+            }
+            ++k;
+        }
+        fields_vec.push_back(tmp1.data());
+        if (strcmp(tmp1.data(), field.data()) == 0){
+            cmp = 0;
+        }
+        ++j;
+    }
+    if (cmp == 1) {
+        throw std::logic_error("No such field");
+    }
+    std::string str;
+    std::stack<long> tmp_stack;
+    std::unordered_map<std::string, std::string> tmp_map;
+    while (!file.eof()) {
+        str.clear();
+        std::getline(file, str);
+        str += '\n';
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
+        tmp_map.clear();
+        int k = 0;
+        i_tmp = 0;
+        while (k < cnt_fields) {
+            tmp = "";
+            while (str[i_tmp] != ' ') {
+                tmp += str[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            tmp_map[fields_vec[k]] = tmp;
+            ++k;
+        }
+        if (if_bool(tmp_map, where_clause.expression)) {
+            for (const std::string & item : expression) {
+                if (isalpha(item[0]) || item[0] == '_') {
+                    tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+                } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                    tmp_stack.push(strtol(item.data(), nullptr, 10));
+                } else if (item == "+") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 + op2);
+                } else if (item == "-") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 - op2);
+                } else if (item == "*") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 * op2);
+                } else if (item == "/") {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 / op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 % op2);
+                }
+            }
+            tmp_map[field.data()] = std::to_string(tmp_stack.top());
+            tmp_stack.pop();
+            std::string str_tmp = "";
+            for (int i = 0; i < fields_vec.size(); ++i) {
+                str_tmp += tmp_map[fields_vec[i]] + " ";
+            }
+            str_tmp += '\n';
+            fputs(str_tmp.data(), tmp_file);
+        }
+    }
+
+    std::ofstream fout;
+    fout.open(table_name, std::ios_base::trunc);
+    int c;
+    std::rewind(tmp_file);
+    while ((c = fgetc(tmp_file)) != EOF) {
+        fout.put(c);
+    }
+    fout.flush();
+    fout.close();
+    std::fclose(tmp_file);
+    response = "Update " + table_name + " was successful.";
+}
+
 void Table::if_delete(std::string & response) {
     FILE* tmp_file = std::tmpfile();
     std::string head;
@@ -313,6 +1104,7 @@ void Table::if_delete(std::string & response) {
     fout.flush();
     fout.close();
     std::fclose(tmp_file);
+    response = "Delete from " + table_name + " was successful.";
 }
 
 void Table::if_delete(struct_like_where_clause & where_clause, std::string & response) {
@@ -390,6 +1182,7 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
     fout.flush();
     fout.close();
     std::fclose(tmp_file);
+    response = "Delete from " + table_name + " was successful.";
 }
 
 void Table::if_delete(struct_in_where_clause & where_clause, std::string & response) {
@@ -462,6 +1255,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
     fout.flush();
     fout.close();
     std::fclose(tmp_file);
+    response = "Delete from " + table_name + " was successful.";
 }
 
 void Table::if_delete(struct_bool_where_clause & where_clause, std::string & response) {
@@ -534,6 +1328,7 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
     fout.flush();
     fout.close();
     std::fclose(tmp_file);
+    response = "Delete from " + table_name + " was successful.";
 }
 
 void Table::if_create(std::vector<struct_field_description>& field_description, std::string & response) {

@@ -270,8 +270,12 @@ int main()
                 Table table(file_name);
                 if (where_clause_type == "ALL") {
                     table.if_select(request_select.fields, response);
-                } else {
-
+                } else if (where_clause_type == "LIKE") {
+                    table.if_select(request_select.fields, like_where_clause, response);
+                } else if (where_clause_type == "IN") {
+                    table.if_select(request_select.fields, in_where_clause, response);
+                } else if (where_clause_type == "BOOL") {
+                    table.if_select(request_select.fields, bool_where_clause, response);
                 }
             } else if (request_type == "INSERT") {
                 std::string file_name = request_insert.name.data();
@@ -282,8 +286,12 @@ int main()
                 Table table(file_name);
                 if (where_clause_type == "ALL") {
                     table.if_update(request_update.field, request_update.expression, response);
-                } else {
-
+                } else if (where_clause_type == "LIKE") {
+                    table.if_update(request_update.field, request_update.expression, like_where_clause, response);
+                } else if (where_clause_type == "IN") {
+                    table.if_update(request_update.field, request_update.expression, in_where_clause, response);
+                } else if (where_clause_type == "BOOL") {
+                    table.if_update(request_update.field, request_update.expression, bool_where_clause, response);
                 }
             } else if (request_type == "DELETE") {
                 std::string file_name = request_delete.name.data();
@@ -298,7 +306,6 @@ int main()
                     table.if_delete(bool_where_clause, response);
                 }
             } else if (request_type == "CREATE") {
-                std::cout << "create" << std::endl;
                 std::string file_name = request_create.name.data();
                 Table table(file_name);
                 table.if_create(request_create.fields_description, response);
