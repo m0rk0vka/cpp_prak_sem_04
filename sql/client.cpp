@@ -192,7 +192,7 @@ int main() {
                 send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
             }
 //          WHERE-clause
-            /*if (parser::where_clause_type == "LIKE") {
+            if (parser::where_clause_type == "LIKE") {
                 int field_name_len = parser::like_where_clause.field_name.size();
                 send(sock, &field_name_len, sizeof(int), 0);
                 send(sock, parser::like_where_clause.field_name.data(), field_name_len, 0);
@@ -231,7 +231,7 @@ int main() {
                 }
             } else if (parser::where_clause_type == "ALL" || parser::where_clause_type == "NO") {
                 // nothing to do
-            }*/
+            }
         } catch (const std::system_error & e) {
             std::cerr << "Can't sending data to server. Error message: " << e.what() << '!' << std::endl;
             std::cerr << "Try again, please." << std::endl;
