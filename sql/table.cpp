@@ -385,8 +385,9 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
 }
 
 void Table::if_select(std::vector<std::string> & fields, struct_bool_where_clause & where_clause, std::string & response) {
-    std::string head, tmp, tmp1;
+        std::string head, tmp, tmp1;
     std::getline(file, head);
+    head += '\n';
     int i_tmp = 0;
     while (head[i_tmp] != ' ') {
         tmp += head[i_tmp];
@@ -401,7 +402,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
         j = 0;
         while (j < cnt_fields) {
             tmp1.clear();
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 tmp1 += head[i_tmp];
                 ++i_tmp;
             }
@@ -409,7 +410,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             if (head[i_tmp] == 'L') {
                 i_tmp += 2;
             } else {
-                while (head[i_tmp] != ' ') {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
@@ -419,32 +420,13 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             ++j;
         }
     } else {
-        j = 0;
-        while (j < cnt_fields) {
-            tmp1.clear();
-            while (head[i_tmp] != ' ') {
-                tmp1 += head[i_tmp];
-                ++i_tmp;
-            }
-            ++i_tmp;
-            if (head[i_tmp] == 'L') {
-                i_tmp += 2;
-            } else {
-                while (head[i_tmp] != ' ') {
-                    ++i_tmp;
-                }
-                ++i_tmp;
-            }
-            fields_vec.push_back(tmp1.data());
-            ++j;
-        }
         for (int i = 0; i < fields.size(); i++) {
             j = 0;
             tmp = fields[i].data();
             int k = i_tmp;
             while (j < cnt_fields) {
                 tmp1.clear();
-                while (head[k] != ' ') {
+                while (head[k] != ' ' && head[k] != '\n') {
                     tmp1 += head[k];
                     ++k;
                 }
@@ -452,7 +434,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
                 if (head[k] == 'L') {
                     k += 2;
                 } else {
-                    while (head[k] != ' ') {
+                    while (head[k] != ' ' && head[k] != '\n') {
                         ++k;
                     }
                     ++k;
@@ -462,10 +444,29 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
                 }
                 ++j;
             }
-            if (j > cnt_fields) {
+            if (j == cnt_fields) {
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
+        }
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            fields_vec.push_back(tmp1.data());
+            ++j;
         }
     }
     std::string str;
@@ -474,16 +475,16 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
     while (!file.eof()){
         str.clear();
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -492,11 +493,12 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             ++k;
         }
         if (if_bool(tmp_map, where_clause.expression)) {
+            std::cout << "str = " << str;
             for (int i = 0; i < field_num.size(); ++i) {
                 int j = 0, k = 0;
                 while (j <= field_num[i]) {
                     tmp.clear();
-                    while (str[k] != ' ') {
+                    while (str[k] != ' ' && str[k] != '\n') {
                         tmp += str[k];
                         ++k;
                     }
@@ -508,9 +510,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             response += '\n';
         }
     }
-    if (response.size() == 0) {
-        throw std::logic_error("Table is empty");
-    }
+    response.erase(response.end() - 1);
 }
 
 void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> & fields_num, std::vector<int> & flags, std::string & response) {
@@ -1503,13 +1503,15 @@ bool Table::if_bool(std::unordered_map<std::string, std::string> & tmp_map, std:
             if (isalpha(item[0]) || item[0] == '_') {
                 tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
             } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1)) {
+                std::cout << item.data() << std::endl;
                 tmp_stack.push(strtol(item.data(), nullptr, 10));
             }
             flag = false;
         } else {
             if (((isalpha(item[0])) && (item != "AND") && (item != "OR") && (item != "NOT")) || (item[0] == '_')) {
                 tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
-            } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1) || item[0] == '\'') {//for what ' ?
+            } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1) || item[0] == '\'') {
+                std::cout << item.data() << std::endl;
                 tmp_stack.push(strtol(item.data(), nullptr, 10));
             } else if (item == "+") {
                 long op2 = tmp_stack.top();
@@ -1602,6 +1604,7 @@ bool Table::if_bool(std::unordered_map<std::string, std::string> & tmp_map, std:
             }
         }
     }
+    std::cout << "tmp_stack.top() = " << tmp_stack.top() << std::endl;
     return tmp_stack.top();
 }
 
