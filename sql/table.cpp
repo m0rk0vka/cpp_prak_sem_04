@@ -86,7 +86,7 @@ void Table::if_select(std::vector<std::string> & fields, std::string & response)
                 }
                 ++j;
             }
-            if (j == cnt_fields) {//this place don't work
+            if (j == cnt_fields) {
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
@@ -114,9 +114,6 @@ void Table::if_select(std::vector<std::string> & fields, std::string & response)
             response += tmp + ' ';
         }
         response += '\n';
-    }
-    if (response.size() == 0) {
-        throw std::logic_error("Table is empty");
     }
     response.erase(response.end() - 1);
 }
@@ -186,7 +183,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
                 }
                 ++j;
             }
-            if (j == cnt_fields) {//this place don't work
+            if (j == cnt_fields) {
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
@@ -256,15 +253,13 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
             response += '\n';
         }
     }
-    if (response.size() == 0) {
-        throw std::logic_error("Table is empty");
-    }
     response.erase(response.end() - 1);
 }
 
 void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause & where_clause, std::string & response) {
     std::string head, tmp, tmp1;
     std::getline(file, head);
+    head += '\n';
     int i_tmp = 0;
     while (head[i_tmp] != ' ') {
         tmp += head[i_tmp];
@@ -279,7 +274,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
         j = 0;
         while (j < cnt_fields) {
             tmp1.clear();
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 tmp1 += head[i_tmp];
                 ++i_tmp;
             }
@@ -287,7 +282,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
             if (head[i_tmp] == 'L') {
                 i_tmp += 2;
             } else {
-                while (head[i_tmp] != ' ') {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
@@ -297,32 +292,13 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
             ++j;
         }
     } else {
-        j = 0;
-        while (j < cnt_fields) {
-            tmp1.clear();
-            while (head[i_tmp] != ' ') {
-                tmp1 += head[i_tmp];
-                ++i_tmp;
-            }
-            ++i_tmp;
-            if (head[i_tmp] == 'L') {
-                i_tmp += 2;
-            } else {
-                while (head[i_tmp] != ' ') {
-                    ++i_tmp;
-                }
-                ++i_tmp;
-            }
-            fields_vec.push_back(tmp1.data());
-            ++j;
-        }
         for (int i = 0; i < fields.size(); i++) {
             j = 0;
             tmp = fields[i].data();
             int k = i_tmp;
             while (j < cnt_fields) {
                 tmp1.clear();
-                while (head[k] != ' ') {
+                while (head[k] != ' ' && head[k] != '\n') {
                     tmp1 += head[k];
                     ++k;
                 }
@@ -330,7 +306,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
                 if (head[k] == 'L') {
                     k += 2;
                 } else {
-                    while (head[k] != ' ') {
+                    while (head[k] != ' ' && head[k] != '\n') {
                         ++k;
                     }
                     ++k;
@@ -340,10 +316,29 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
                 }
                 ++j;
             }
-            if (j > cnt_fields) {//this place don't work
+            if (j == cnt_fields) {
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
+        }
+        j = 0;
+        while (j < cnt_fields) {
+            tmp1.clear();
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
+                tmp1 += head[i_tmp];
+                ++i_tmp;
+            }
+            ++i_tmp;
+            if (head[i_tmp] == 'L') {
+                i_tmp += 2;
+            } else {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
+                    ++i_tmp;
+                }
+                ++i_tmp;
+            }
+            fields_vec.push_back(tmp1.data());
+            ++j;
         }
     }
     std::string str;
@@ -352,16 +347,16 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
     while (!file.eof()){
         str.clear();
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -369,12 +364,12 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num) ^ where_clause.use_not) {
             for (int i = 0; i < field_num.size(); ++i) {
                 int j = 0, k = 0;
                 while (j <= field_num[i]) {
                     tmp.clear();
-                    while (str[k] != ' ') {
+                    while (str[k] != ' ' && str[k] != '\n') {
                         tmp += str[k];
                         ++k;
                     }
@@ -386,9 +381,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
             response += '\n';
         }
     }
-    if (response.size() == 0) {
-        throw std::logic_error("Table is empty");
-    }
+    response.erase(response.end() - 1);
 }
 
 void Table::if_select(std::vector<std::string> & fields, struct_bool_where_clause & where_clause, std::string & response) {
@@ -469,7 +462,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
                 }
                 ++j;
             }
-            if (j > cnt_fields) {//this place don't work
+            if (j > cnt_fields) {
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
@@ -1449,6 +1442,7 @@ bool Table::if_like(std::string & str, int i_str, std::string & sample_string, i
 }
 
 bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression, std::vector<std::string> & list_consts_str, std::vector<long> & list_consts_num) {
+    try {
     std::stack<long> tmp_stack;
     for (const std::string & item : expression) {
         if (isalpha(item[0]) || item[0] == '_') {
@@ -1489,12 +1483,15 @@ bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::v
     }
     long tmp = tmp_stack.top();
     tmp_stack.pop();
-    if (std::find(list_consts_num.begin(), list_consts_num.end(), tmp) == list_consts_num.end()) {
+    if (std::find(list_consts_num.begin(), list_consts_num.end(), tmp) != list_consts_num.end()) {
         return true;
-    } else if (std::find(list_consts_str.begin(), list_consts_str.end(), std::to_string(tmp)) == list_consts_str.end()) {
+    } else if (std::find(list_consts_str.begin(), list_consts_str.end(), std::to_string(tmp)) != list_consts_str.end()) {
         return true;
     } else {
         return false;
+    }
+    } catch (...) {
+        throw std::logic_error("segmentation fault");
     }
 }
 
