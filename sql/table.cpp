@@ -41,12 +41,11 @@ void Table::if_select(std::vector<std::string> & fields, std::string & response)
     int cnt_fields = atoi(tmp.data());
     std::vector<int> field_num;
     int j;
-    std::cout << cnt_fields << std::endl;
     if (fields.size() == 0) {//if star
         j = 0;
         while (j < cnt_fields) {
             tmp1.clear();
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 tmp1 += head[i_tmp];
                 ++i_tmp;
             }
@@ -125,6 +124,7 @@ void Table::if_select(std::vector<std::string> & fields, std::string & response)
 void Table::if_select(std::vector<std::string> & fields, struct_like_where_clause & where_clause, std::string & response) {
     std::string head, tmp, tmp1;
     std::getline(file, head);
+    head += '\n';
     int i_tmp = 0;
     while (head[i_tmp] != ' ') {
         tmp += head[i_tmp];
@@ -138,7 +138,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
         j = 0;
         while (j < cnt_fields) {
             tmp1.clear();
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 tmp1 += head[i_tmp];
                 ++i_tmp;
             }
@@ -146,7 +146,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
             if (head[i_tmp] == 'L') {
                 i_tmp += 2;
             } else {
-                while (head[i_tmp] != ' ') {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
@@ -168,7 +168,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
             int k = i_tmp;
             while (j < cnt_fields) {
                 tmp1.clear();
-                while (head[k] != ' ') {
+                while (head[k] != ' ' && head[k] != '\n') {
                     tmp1 += head[k];
                     ++k;
                 }
@@ -176,7 +176,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
                 if (head[k] == 'L') {
                     k += 2;
                 } else {
-                    while (head[k] != ' ') {
+                    while (head[k] != ' ' && head[k] != '\n') {
                         ++k;
                     }
                     ++k;
@@ -186,7 +186,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
                 }
                 ++j;
             }
-            if (j > cnt_fields) {//this place don't work
+            if (j == cnt_fields) {//this place don't work
                 throw std::logic_error("No such field");
             }
             field_num.push_back(j);
@@ -194,7 +194,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
         j = 0;
         while (j < cnt_fields) {
             tmp1.clear();
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 tmp1 += head[i_tmp];
                 ++i_tmp;
             }
@@ -202,7 +202,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
             if (head[i_tmp] == 'L') {
                 i_tmp += 2;
             } else {
-                while (head[i_tmp] != ' ') {
+                while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
@@ -221,15 +221,15 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
     response = "Select table from " + table_name + " :\n";
     while (!file.eof()){
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         int j = 0;
         i_tmp = 0;
-        while (str[i_tmp] < str.size()) {
+        while (i_tmp < str.size()) {
             tmp.clear();
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -239,12 +239,12 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
             }
             ++j;
         }
-        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+        if (if_like(tmp, 0, where_clause.sample_string, 0) ^ where_clause.use_not) {
             for (int i = 0; i < field_num.size(); ++i) {
                 int j = 0, k = 0;
                 while (j <= field_num[i]) {
                     tmp.clear();
-                    while (str[k] != ' ') {
+                    while (str[k] != ' ' && str[k] != '\n') {
                         tmp += str[k];
                         ++k;
                     }
@@ -259,6 +259,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_like_where_claus
     if (response.size() == 0) {
         throw std::logic_error("Table is empty");
     }
+    response.erase(response.end() - 1);
 }
 
 void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause & where_clause, std::string & response) {
@@ -1367,15 +1368,16 @@ void Table::if_drop(std::string & response) {
 }
 
 bool Table::if_like(std::string & str, int i_str, std::string & sample_string, int i_smpl_str) {
-    int i_tmp1 = i_str, i_tmp2 = i_smpl_str, len_str = str.size(), len_smpl_str = sample_string.size();
-    while (i_tmp1 < len_str && i_tmp2 < len_smpl_str) {
+    int len_str = str.size(), len_smpl_str = sample_string.size();
+    try {
+    while (i_str < len_str && i_smpl_str < len_smpl_str) {
         if (sample_string[i_smpl_str] == '%') {
             ++i_smpl_str;
-            if (i_tmp2 == len_smpl_str) {
+            if (i_smpl_str == len_smpl_str) {
                 return true;
             }
-            while (i_tmp1 < len_str) {
-                if (if_like(str, i_tmp1, sample_string, i_tmp2)) {
+            while (i_str < len_str) {
+                if (if_like(str, i_str, sample_string, i_smpl_str)) {
                     return true;
                 }
                 ++i_str;
@@ -1436,16 +1438,14 @@ bool Table::if_like(std::string & str, int i_str, std::string & sample_string, i
             ++i_smpl_str;
         }
     }
-    if (i_tmp1 == len_str && i_tmp2 == len_smpl_str) {
+    if (i_str == len_str && i_smpl_str == len_smpl_str) {
         return true;
-    } /*else if (i_tmp2 != len_smpl_str) {
-        if (sample_string[i_smpl_str] == '%') {
-            return like(iter1, ++i_smpl_str, len_str, len_smpl_str);
-        } else {
-            return false;
-        }
-    }*/
-    return false;
+    } else {
+        return false;
+    }
+    } catch (...) {
+        throw std::logic_error("segmentation fault");
+    }
 }
 
 bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression, std::vector<std::string> & list_consts_str, std::vector<long> & list_consts_num) {

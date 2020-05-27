@@ -1630,10 +1630,10 @@ namespace parser{
         if (like::cur_lex_type == lex_type_t::XOR) {
             like::next();
             B1();
-            C();
+            C1();
         } else {
             B1();
-            C();
+            C1();
         }
     }
 
