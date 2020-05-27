@@ -543,7 +543,7 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
             str += std::to_string(num) + " ";
             ++i_num;
         } else {
-            std::string text = fields_str[i].data();
+            std::string text = fields_str[i_str].data();
             if (head[i_tmp] == 'L') {
                 throw std::logic_error("Bad field type");
             } else {
@@ -552,7 +552,7 @@ void Table::if_insert(std::vector<std::string> & fields_str, std::vector<long> &
                     ++i_tmp;
                 }
                 ++i_tmp;
-                if (atoi(tmp.data()) < text.size()) {
+                if (atoi(tmp.data()) < text.size() - 2) {
                     throw std::logic_error("Too big TEXT");
                 }
             }
@@ -1356,7 +1356,7 @@ void Table::if_create(std::vector<struct_field_description>& field_description, 
 
 void Table::if_drop(std::string & response) {
     if(remove(table_name.data())) {
-        std::logic_error("Can't remove file");
+        std::logic_error("Can't drop table");
     } else {
         response = "Drop " + table_name + " was successful.";
     }

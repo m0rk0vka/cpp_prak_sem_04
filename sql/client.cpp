@@ -22,10 +22,6 @@ void manual() {
     std::cout << "DELETE-sentence ::= DELETE FROM <table name> <WHERE-clause>" << std::endl;
     std::cout << "CREATE-sentence ::= CREATE TABLE <table name> ( <list of fields descriptions> )" << std::endl;
     std::cout << "DROP-sentence   ::= DROP TABLE <table name>" << std::endl;
-    std::cout << std::endl;
-    std::cout << "List of fields    ::= <field description> { , <field description> }" << std::endl;
-    std::cout << "Field description ::= <field name> <field type>" << std::endl;
-    std::cout << "Field type        ::= TEXT ( <unsigned long> ) | LONG" << std::endl;
     std::cout << "--------------------------------------------------------------------------------------" << std::endl;
 }
 
@@ -87,8 +83,6 @@ int main() {
             continue;
         }
         //      Send to server
-        std::cout << "req_type = " << parser::request_type << "." << std::endl;
-        std::cout << "where_clause_type = " << parser::where_clause_type << "." << std::endl;
         try {
             if (parser::request_type == "SELECT") {
                 int len_type = parser::request_type.size();
@@ -198,7 +192,7 @@ int main() {
                 send(sock, parser::request_drop.name.data(), table_name_len + 1, 0);
             }
 //          WHERE-clause
-            if (parser::where_clause_type == "LIKE") {
+            /*if (parser::where_clause_type == "LIKE") {
                 int field_name_len = parser::like_where_clause.field_name.size();
                 send(sock, &field_name_len, sizeof(int), 0);
                 send(sock, parser::like_where_clause.field_name.data(), field_name_len, 0);
@@ -237,7 +231,7 @@ int main() {
                 }
             } else if (parser::where_clause_type == "ALL" || parser::where_clause_type == "NO") {
                 // nothing to do
-            }
+            }*/
         } catch (const std::system_error & e) {
             std::cerr << "Can't sending data to server. Error message: " << e.what() << '!' << std::endl;
             std::cerr << "Try again, please." << std::endl;

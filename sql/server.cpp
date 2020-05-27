@@ -59,7 +59,7 @@ int main()
     std::string response;
     response.clear();
     char buf[4096];
-    int res_recv;
+    int res_recv, cnt;
 
     while (true)
     {
@@ -67,6 +67,8 @@ int main()
         std::cout << "Well done, now waiting client message" << std::endl;
         response.clear();
         try {
+            cnt = 0;
+bag:
             memset(buf, 0, 4096);
             int len_buf;
             res_recv = recv(clientSocket, &len_buf, 4, 0);
@@ -78,6 +80,12 @@ int main()
                 throw std::system_error(std::error_code(), "Recv function finished with error code " + std::to_string(errno));
             }
             request_type = buf;
+            if (request_type.size() == 0) {
+                if (cnt < 2) {
+                    ++cnt;
+                    goto bag;
+                }
+            }
             std::cout << "req_type = " << request_type << "." << std::endl;
             memset(buf, 0, 4096);
             res_recv = recv(clientSocket, &len_buf, 4, 0);
