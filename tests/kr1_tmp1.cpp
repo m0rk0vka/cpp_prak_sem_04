@@ -1,5 +1,5 @@
 #include <iostream>
-#include <cstring>
+#include <string.h>
 
 constexpr size_t MAX_STRING_SIZE = 10;
 
@@ -7,7 +7,7 @@ enum state { WAIT, WASH, END};
 
 class Ved{
     state* states;
-    char** num;
+    const char** num;
     size_t _size;
     bool* init;
     size_t count = 0;
@@ -25,7 +25,7 @@ public:
 Ved::Ved(size_t n){
     _size = n;
     states = new state[n];
-    num = new char*[n];
+    num = new const char*[n];
     init = new bool[n];
     for (size_t i = 0; i < n; ++i){
         states[i] = WAIT;
@@ -37,7 +37,7 @@ Ved::Ved(size_t n){
 Ved::Ved(const Ved& other){
     _size = other._size;
     states = new state[_size];
-    num = new char*[_size];
+    num = new const char*[_size];
     init = new bool[_size];
     count = other.count;
     for (size_t i = 0; i < _size; ++i){
@@ -63,7 +63,7 @@ Ved& Ved::operator=(const Ved& other){
     count = other.count;
     _size = other._size;
     states = new state[_size];
-    num = new char*[_size];
+    num = new const char*[_size];
     init = new bool[_size];
     for (size_t i = 0; i < _size; ++i){
         states[i] = other.states[i];
@@ -82,7 +82,7 @@ size_t Ved::insert_num(const std::string& id){
     }
     for (size_t i = 0; i < _size; ++i){
         if (init[i] == false){
-            strcpy(num[i], id.c_str());
+            num[i] = id.c_str();
             init[i] = true;
             states[i] = WAIT;
             ++count;
@@ -165,8 +165,8 @@ Transfer operator<<(std::ostream& s, const Ved& v){
 }*/
 
 int main(){
-    Ved v(25);
+    Ved v(5);
     v.insert_num("DVK");
-    // v["DVK"] = WASH;
+    v["DVK"] = WASH;
     // std::cout << v << "DVK" << '\n';
 }
