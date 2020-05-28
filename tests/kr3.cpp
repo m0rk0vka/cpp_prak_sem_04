@@ -81,7 +81,7 @@ namespace lexer {
                     state = V;
                 } else if (c == ')') {
                     state = C;
-                } else if (c == '/') {
+                } else if (c == 'd') {
                     state = D;
                 } else if (std::isdigit(c)) {
                     cur_lex_text += c;
