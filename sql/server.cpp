@@ -323,20 +323,31 @@ bag:
                 table.if_drop(response);
             }
         } catch (const std::logic_error & e) {
-            std::cout << "catch logic error" << std::endl;
             std::string err = e.what();
             response = "You get an error. Server message: " + err;
             int res_len = response.size();
             int res_send = send(clientSocket, &res_len, sizeof(int), 0);
             if (res_send == -1) {
                 std::cout << "send error" << std::endl;
-                //throw std::system_error(std::error_code(), "Send function finished with error code " + std::to_string(errno));
             }
             std::cout << "response = " << response.data() << std::endl;
             res_send = send(clientSocket, response.data(), res_len, 0);
             if (res_send == -1) {
                 std::cout << "send error" << std::endl;
-                //throw std::system_error(std::error_code(), "Send function finished with error code " + std::to_string(errno));
+            }
+            continue;
+        } catch (...) {
+            std::string err = "sigmentation fault";
+            response = "You get an error. Server message: " + err;
+            int res_len = response.size();
+            int res_send = send(clientSocket, &res_len, sizeof(int), 0);
+            if (res_send == -1) {
+                std::cout << "send error" << std::endl;
+            }
+            std::cout << "response = " << response.data() << std::endl;
+            res_send = send(clientSocket, response.data(), res_len, 0);
+            if (res_send == -1) {
+                std::cout << "send error" << std::endl;
             }
             continue;
         }

@@ -385,7 +385,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
 }
 
 void Table::if_select(std::vector<std::string> & fields, struct_bool_where_clause & where_clause, std::string & response) {
-        std::string head, tmp, tmp1;
+    std::string head, tmp, tmp1;
     std::getline(file, head);
     head += '\n';
     int i_tmp = 0;
@@ -586,7 +586,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -594,7 +594,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -617,6 +617,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
@@ -709,7 +710,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -717,7 +718,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -741,15 +742,15 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     while (!file.eof()) {
         str.clear();
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         int j = 0;
         i_tmp = 0;
         while (str[i_tmp] < str.size()) {
             tmp.clear();
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -853,7 +854,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -861,7 +862,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -881,16 +882,16 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     while (!file.eof()) {
         str.clear();
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -979,7 +980,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -987,7 +988,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -1007,16 +1008,16 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
     while (!file.eof()) {
         str.clear();
         std::getline(file, str);
-        str += '\n';
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -1120,7 +1121,7 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
     int j = 0;
     while (i_tmp < head.size()) {
         tmp.clear();
-        while (head[i_tmp] != ' ') {
+        while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
             tmp += head[i_tmp];
             ++i_tmp;
         }
@@ -1134,7 +1135,7 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
                 throw std::logic_error("Field type in WHERE-clause must be TEXT");
             }
         } else {
-            while (head[i_tmp] != ' ') {
+            while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                 ++i_tmp;
             }
             ++i_tmp;
@@ -1150,12 +1151,15 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
     std::string str;
     while (!file.eof()) {
         std::getline(file, str);
+        if (strcmp(str.data(), "") == 0) {
+            break;
+        }
         str += '\n';
         int k = 0;
         i_tmp = 0;
         while (i_tmp < str.size()) {
             tmp.clear();
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -1201,7 +1205,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -1209,7 +1213,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -1225,12 +1229,13 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -1274,7 +1279,7 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
     int k = i_tmp;
     while (j < cnt_fields) {
         tmp1.clear();
-        while (head[k] != ' ') {
+        while (head[k] != ' ' && head[k] != '\n') {
             tmp1 += head[k];
             ++k;
         }
@@ -1282,7 +1287,7 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
         if (head[k] == 'L') {
             k += 2;
         } else {
-            while (head[k] != ' ') {
+            while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
@@ -1298,12 +1303,13 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
         if (strcmp(str.data(), "") == 0) {
             break;
         }
+        str += '\n';
         tmp_map.clear();
         int k = 0;
         i_tmp = 0;
         while (k < cnt_fields) {
             tmp = "";
-            while (str[i_tmp] != ' ') {
+            while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
                 ++i_tmp;
             }
@@ -1362,7 +1368,6 @@ void Table::if_drop(std::string & response) {
 
 bool Table::if_like(std::string & str, int i_str, std::string & sample_string, int i_smpl_str) {
     int len_str = str.size(), len_smpl_str = sample_string.size();
-    try {
     while (i_str < len_str && i_smpl_str < len_smpl_str) {
         if (sample_string[i_smpl_str] == '%') {
             ++i_smpl_str;
@@ -1436,13 +1441,9 @@ bool Table::if_like(std::string & str, int i_str, std::string & sample_string, i
     } else {
         return false;
     }
-    } catch (...) {
-        throw std::logic_error("segmentation fault");
-    }
 }
 
 bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression, std::vector<std::string> & list_consts_str, std::vector<long> & list_consts_num) {
-    try {
     std::stack<long> tmp_stack;
     for (const std::string & item : expression) {
         if (isalpha(item[0]) || item[0] == '_') {
@@ -1489,9 +1490,6 @@ bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::v
         return true;
     } else {
         return false;
-    }
-    } catch (...) {
-        throw std::logic_error("segmentation fault");
     }
 }
 

@@ -1,172 +1,189 @@
 #include <iostream>
 #include <string.h>
 
-constexpr size_t MAX_STRING_SIZE = 10;
+enum state {WAIT, WASH, END};
 
-enum state { WAIT, WASH, END};
+std::ostream& os = std::cout;
 
-class Ved{
+class CarWash{
     state* states;
     const char** num;
-    size_t _size;
-    bool* init;
-    size_t count = 0;
+    int size;
+    bool* use;
+    int count = 0;
 public:
-    Ved(size_t n);
-    Ved(const Ved& other);
-    ~Ved();
-    void change(const state& value, const std::string& id);
-    void leave(const std::string& id);
-    Ved& operator=(const Ved& other);
-    size_t insert_num(const std::string& id);
-    state& operator[](const std::string& id);
+    CarWash(int n);
+    CarWash(const CarWash& a);
+    ~CarWash();
+    void changeStatus(const std::string& id, const state& value);
+    void go(const std::string& id);
+    CarWash& operator=(const CarWash& a);
+    int set_number(const std::string& id);
+    state& operator()(const std::string& id);
+    friend CarWash& operator<<(CarWash& a, const std::string& id);
+    friend CarWash& operator<<(CarWash& a, const int& pos);
 };
 
-Ved::Ved(size_t n){
-    _size = n;
+CarWash::CarWash(int n){
+    size = n;
     states = new state[n];
     num = new const char*[n];
-    init = new bool[n];
-    for (size_t i = 0; i < n; ++i){
+    use = new bool[n];
+    for (int i = 0; i < n; ++i){
         states[i] = WAIT;
-        init[i] = false;
+        use[i] = false;
         num[i] = 0;
     }
 }
 
-Ved::Ved(const Ved& other){
-    _size = other._size;
-    states = new state[_size];
-    num = new const char*[_size];
-    init = new bool[_size];
-    count = other.count;
-    for (size_t i = 0; i < _size; ++i){
-        states[i] = other.states[i];
-        init[i] = other.init[i];
+CarWash::CarWash(const CarWash& a){
+    size = a.size;
+    states = new state[size];
+    num = new const char*[size];
+    use = new bool[size];
+    count = a.count;
+    for (int i = 0; i < size; ++i){
+        states[i] = a.states[i];
+        use[i] = a.use[i];
     }
-    memcpy(num, other.num, _size * sizeof(char*));
+    memcpy(num, a.num, size * sizeof(char*));
 }
 
-Ved::~Ved(){
-    delete [] init;
+CarWash::~CarWash(){
+    delete [] use;
     delete [] num;
     delete [] states;
 }
 
-Ved& Ved::operator=(const Ved& other){
-    if (this == &other){
-        return *this;
-    }
-    delete [] init;
+CarWash& CarWash::operator=(const CarWash& a){
+    delete [] use;
     delete [] num;
     delete [] states;
-    count = other.count;
-    _size = other._size;
-    states = new state[_size];
-    num = new const char*[_size];
-    init = new bool[_size];
-    for (size_t i = 0; i < _size; ++i){
-        states[i] = other.states[i];
-        init[i] = other.init[i];
+    count = a.count;
+    size = a.size;
+    states = new state[size];
+    num = new const char*[size];
+    use = new bool[size];
+    for (int i = 0; i < size; ++i){
+        states[i] = a.states[i];
+        use[i] = a.use[i];
     }
-    memcpy(num, other.num, _size * sizeof(char*));
+    memcpy(num, a.num, size * sizeof(char*));
     return *this;
 }
 
-size_t Ved::insert_num(const std::string& id){
-    if (count >= _size){
-        throw std::logic_error("no space");
+int CarWash::set_number(const std::string& id) {
+    if (count >= size) {
+        throw std::logic_error("No space");
     }
-    if (id.size() >= MAX_STRING_SIZE){
-        throw std::logic_error("invalid number size");
-    }
-    for (size_t i = 0; i < _size; ++i){
-        if (init[i] == false){
+    for (int i = 0; i < size; ++i){
+        if (use[i] == false){
             num[i] = id.c_str();
-            init[i] = true;
+            use[i] = true;
             states[i] = WAIT;
             ++count;
             return i;
         }
     }
-    throw std::logic_error("No such id");
+    throw std::logic_error("");
 }
 
-void Ved::leave(const std::string& id){
-    for (size_t i = 0; i < _size; ++i){
-        if (id == num[i]){
-            if (states[i] != END){
-                throw std::logic_error("auto is dirty");
-            }
-            init[i] = false;
-            --count;
-            return;
-        }
-    }
-    throw std::logic_error("no such id");
-}
-
-void Ved::change(const state& value, const std::string& id){
+void CarWash::changeStatus(const std::string& id, const state& value){
     if (!(value == END || value == WAIT || value == WASH)){
-        throw std::logic_error("invalid status");
+        throw std::logic_error("Invalid status");
     }
-    for (size_t i = 0; i < _size; ++i){
-        if (id == num[i]){
+    for (int i = 0; i < size; ++i){
+        if (num[i] == id){
             states[i] = value;
             return;
         }
     }
-    throw std::logic_error("no such id");
+    throw std::logic_error("No such id");
 }
 
-state& Ved::operator[](const std::string& id){
-    for (size_t i = 0; i < _size; ++i){
-        if (id == num[i] && init[i] == true){
+void CarWash::go(const std::string& id){
+    for (int i = 0; i < size; ++i){
+        if (id == num[i]){
+            if (states[i] != END){
+                throw std::logic_error("Car is dirty");
+            }
+            states[i] = WAIT;
+            use[i] = false;
+            num[i] = 0;
+            --count;
+            return;
+        }
+    }
+    throw std::logic_error("No such id");
+}
+
+state& CarWash::operator()(const std::string& id){
+    for (int i = 0; i < size; ++i){
+        if (id == num[i] && use[i] == true){
             return states[i];
         }
     }
-    throw std::logic_error("no such id");
+    throw std::logic_error("No such id");
 }
 
-/*class Transfer{
-public:
-    Transfer(std::ostream& stream, const Ved& vedom);
-    Transfer operator<<(const std::string& str);
-    Transfer operator<<(const size_t& pos);
-private:
-    std::ostream& s;
-    Ved v;
-    };
+CarWash& operator<<(std::ostream& os, CarWash& a) {
+    return a;
+}
 
-Transfer::Transfer(std::ostream& stream, const Ved& vedom) : s(stream), v(vedom){}
-
-
-Transfer Transfer::operator<<(const std::string& id){
-    for (size_t i = 0; i < v._size; ++i){
-        if (id == v.num[i] && v.init[i] == true){
-            s << i << ":" << v.num[i] << v.states[i] << '\n';
-            return *this;
+CarWash& operator<<(CarWash& a, const std::string& id){
+    for (int i = 0; i < a.size; ++i){
+        if (id == a.num[i] && a.use[i] == true){
+            os << i << ":" << a.num[i] <<  ":" << a.states[i] << '\n';
+            return a;
         }
     }
-    throw std::logic_error("no such id");
-    return *this;
+    throw std::logic_error("No such id");
+    return a;
 }
 
-Transfer Transfer::operator<<(const size_t& pos){
-    if (v.init[pos] == false){
-        throw std::logic_error("Free pos");
+CarWash& operator<<(CarWash& a, const int& pos){
+    if (a.use[pos] == false){
+        throw std::logic_error("Empty pos");
     }
-    s << pos << ":" << v.num[pos] << ":" << v.states[pos] << '\n';
-    return *this;
+    os << pos << ":" << a.num[pos] << ":" << a.states[pos] << '\n';
+    return a;
 }
-
-Transfer operator<<(std::ostream& s, const Ved& v){
-    return Transfer{s, v};
-}*/
 
 int main(){
-    Ved v(5);
-    v.insert_num("DVK");
-    v["DVK"] = WASH;
-    // std::cout << v << "DVK" << '\n';
+    CarWash X(2);
+    X.set_number("000");
+    X.set_number("111");
+    try {
+        X.set_number("222");
+    } catch(const std::logic_error & e) {
+        std::cerr << e.what() << std::endl;
+    }
+    X.changeStatus("111", WASH);
+    X.changeStatus("111", END);
+    X.go("111");
+    /*try {
+        X.changeStatus("111", WAIT);
+    } catch (const std::logic_error & e) {
+        std::cerr << e.what() << std::endl;
+    }*/
+    //X.set_number("222");
+    try {
+        X.go("000");
+    } catch(const std::logic_error & e) {
+        std::cerr << e.what() << std::endl;
+    }
+    CarWash Y = X;
+    CarWash Z(5);
+    Z = X;
+    Y.set_number("333");
+    Z.set_number("333");
+    Y("333") = WASH;
+    state cur_state = Z("333");
+    std::cout << "{0 - WAIT, 1 - WASH, 3 - END} : cur_state = " << cur_state << std::endl;
+    try {
+        std::cerr << Y << "333" << '\n' << 0 << '\n';
+    } catch (const std::logic_error & e) {
+        std::cerr << e.what() << std::endl;
+    }
+    return 0;
 }

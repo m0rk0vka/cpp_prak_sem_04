@@ -1132,13 +1132,13 @@ namespace parser{
 //  WHERE-clause
     void W();
     void W_Like();
-    void S1();
-    void A();
-    void B();
-    void B1();
-    void B2();
-    void C1();
-    void D();
+    void W_Like_Sample_String();
+    void W_Like_Enum();
+    void W_Like_Enum_Next_If_Not_Dash();
+    void W_Like_Enum_Start();
+    void W_Like_Enum_If_Dash();
+    void W_Like_Enum_Next();
+    void W_Like_Enum_If_Not_Dash();
     void W_In();
     void W_In_Expression();
     void W_In_Long_Expression();
@@ -1561,30 +1561,30 @@ namespace parser{
         like::next();
         if (like::cur_lex_type == lex_type_t::CHAR) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::PERCENT) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::UNDER) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::OPEN) {
             like::next();
-            A();
+            W_Like_Enum();
             if (like::cur_lex_type != lex_type_t::CLOSE) {
                 throw std::logic_error("Incorrect syntax of string in LIKE clause");
             }
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::XOR) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::DASH) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::CLOSE) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else {
             throw std::logic_error("Incorrect syntax of string in LIKE clause");
         }
@@ -1592,33 +1592,33 @@ namespace parser{
         ++index_vec_lex;
     }
 
-    void S1() {
+    void W_Like_Sample_String() {
         if (like::cur_lex_type == lex_type_t::CHAR) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::PERCENT) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::UNDER) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::OPEN) {
             like::next();
-            A();
+            W_Like_Enum();
             if (like::cur_lex_type != lex_type_t::CLOSE) {
                 throw std::logic_error("Incorrect syntax of string in LIKE clause");
             }
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::XOR) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::DASH) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::CLOSE) {
             like::next();
-            S1();
+            W_Like_Sample_String();
         } else if (like::cur_lex_type == lex_type_t::END) {
             // nothing to do
         } else {
@@ -1626,18 +1626,18 @@ namespace parser{
         }
     }
 
-    void A() {
+    void W_Like_Enum() {
         if (like::cur_lex_type == lex_type_t::XOR) {
             like::next();
-            B1();
-            C1();
+            W_Like_Enum_Start();
+            W_Like_Enum_Next();
         } else {
-            B1();
-            C1();
+            W_Like_Enum_Start();
+            W_Like_Enum_Next();
         }
     }
 
-    void B1() {
+    void W_Like_Enum_Start() {
         if (like::cur_lex_type == lex_type_t::CHAR) {
             c1 = like::cur_lex_text;
             like::next();
@@ -1655,19 +1655,19 @@ namespace parser{
         }
     }
 
-    void C1() {
+    void W_Like_Enum_Next() {
         if (like::cur_lex_type == lex_type_t::DASH) {
             like::next();
-            B2();
+            W_Like_Enum_If_Dash();
             if (c1 > c2) {
                 throw std::logic_error("Incorrect syntax of string in LIKE clause.\nFirst character in range should be less or equal than second one");
             }
         } else {
-            D();
+            W_Like_Enum_If_Not_Dash();
         }
     }
 
-    void B2() {
+    void W_Like_Enum_If_Dash() {
         if (like::cur_lex_type == lex_type_t::CHAR) {
             c2 = like::cur_lex_text;
             like::next();
@@ -1685,16 +1685,16 @@ namespace parser{
         }
     }
 
-    void D() {
+    void W_Like_Enum_If_Not_Dash() {
         if (like::cur_lex_type == lex_type_t::CLOSE) {
             // nothing to do
         } else {
-            B();
-            D();
+            W_Like_Enum_Next_If_Not_Dash();
+            W_Like_Enum_If_Not_Dash();
         }
     }
 
-    void B() {
+    void W_Like_Enum_Next_If_Not_Dash() {
         if (like::cur_lex_type == lex_type_t::CHAR) {
             like::next();
         } else if (like::cur_lex_type == lex_type_t::PERCENT) {
