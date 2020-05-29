@@ -760,7 +760,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             }
             ++j;
         }
-        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+        if (if_like(tmp, 0, where_clause.sample_string, 0) ^ where_clause.use_not) {
             tmp_map.clear();
             int k = 0;
             i_tmp = 0;
@@ -899,7 +899,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num) ^ where_clause.use_not) {
             for (const std::string & item : expression) {
                 if (isalpha(item[0]) || item[0] == '_') {
                     tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
@@ -1170,7 +1170,7 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
                 ++k;
             }
         }
-        if (if_like(tmp, 0, where_clause.sample_string, 0)) {
+        if (if_like(tmp, 0, where_clause.sample_string, 0) ^ where_clause.use_not) {
             fputs(str.data(), tmp_file);
         }
     }
@@ -1243,7 +1243,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num)) {
+        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num) ^ where_clause.use_not) {
             str += '\n';
             fputs(str.data(), tmp_file);
         }
