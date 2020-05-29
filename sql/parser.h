@@ -1723,8 +1723,7 @@ namespace parser{
         }
         ++index_vec_lex;
         W_In_Const_List();
-        if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE)
-        {
+        if (vec_lex[index_vec_lex].type != lex_type_t::CLOSE) {
             throw std::logic_error("No \')\' after \'(\'");
         }
         ++index_vec_lex;
