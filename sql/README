@@ -1,17 +1,9 @@
 SQl-интерпретатор
-Пытался реализовать 1 вариант задачи, что получилось:
-    1) Лексер и парсер для языка SQL работают: клиент разбирает входную строку и посылает кусками на сервер если предложение верно
-    2) Сервер принимает и принимает успешно, затем по идее он должен выполнять дейстивия посланные SQL сообщением:
-        а) что написано: для всех структур (SELECT, INSERT и т.д.) выполняния действий, но для WHERE-clause работа только ALL-альтернативы
-        б) не работает: не ловятся исключения в некоторых местах и не работает работа с файлами - возможны другие ошибки, которые всвязи с имеющимися не могу обнаружить.
-
-По мере возможностей буду стараться завершить проект
+Реализован 1 вариант задачи.
+Компиляция происходит по команде make. Компиляция сервера по data-server, компиляция клиента по data-client.
+Работают все команды из методички.
 
 SQl interpreter
-I tried to implement 1 variant of the task, what happened:
-    1) The lexer and parser for the SQL language work: the client parses the input string and sends pieces to the server if the sentence is true
-    2) The server accepts and accepts successfully, then in theory it should perform the actions sent by the SQL message:
-        a) what is written: for all structures (SELECT, INSERT, etc.) performing actions, but for WHERE-clause only the ALL-alternative works
-        b) does not work: exceptions are not caught in some places and work with files does not work - other errors are possible that I cannot detect due to available ones.
-
-As far as possible I will try to complete the project
+Implemented 1 version of the problem.
+Compilation takes place with the make command. Compiling the server by data-server, compiling the client by data-client.
+All teams from manuals are working.

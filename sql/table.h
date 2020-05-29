@@ -32,5 +32,5 @@ public:
     void if_drop(std::string &);
     bool if_like(std::string &, int, std::string &, int);
     bool if_in(std::unordered_map<std::string, std::string> &, std::vector<std::string> &, std::vector<std::string> &, std::vector<long> &);
-    bool if_bool(std::unordered_map<std::string, std::string> &, std::vector<std::string> &);
+    bool if_bool(std::unordered_map<std::string, int> &, std::unordered_map<std::string, std::string> &, std::vector<std::string> &);
 };

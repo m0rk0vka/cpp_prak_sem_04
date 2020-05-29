@@ -17,8 +17,7 @@ int main()
     int addrlen = sizeof(address);
 
     // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
@@ -27,7 +26,7 @@ int main()
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
-    // Forcefully attaching socket to the port 8080
+    // Forcefully attaching socket to the port 5400
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
@@ -40,7 +39,6 @@ int main()
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    std::cout << "accept" << std::endl;
 
     // While loop: accept and echo message back to client
     std::string request_type;
@@ -64,7 +62,7 @@ int main()
     while (true)
     {
         //Wait for client send data
-        std::cout << "Well done, now waiting client message" << std::endl;
+        std::cout << "Well done, now waiting client message." << std::endl;
         response.clear();
         try {
             cnt = 0;

@@ -387,6 +387,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_in_where_clause 
 void Table::if_select(std::vector<std::string> & fields, struct_bool_where_clause & where_clause, std::string & response) {
     std::string head, tmp, tmp1;
     std::getline(file, head);
+    std::unordered_map<std::string, int> head_map;
     head += '\n';
     int i_tmp = 0;
     while (head[i_tmp] != ' ') {
@@ -409,11 +410,13 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             ++i_tmp;
             if (head[i_tmp] == 'L') {
                 i_tmp += 2;
+                head_map[tmp1.data()] = -1;
             } else {
                 while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
+                head_map[tmp1.data()] = 1;
             }
             field_num.push_back(j);
             fields_vec.push_back(tmp1.data());
@@ -458,12 +461,14 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             }
             ++i_tmp;
             if (head[i_tmp] == 'L') {
+                head_map[tmp1.data()] = -1;
                 i_tmp += 2;
             } else {
                 while (head[i_tmp] != ' ' && head[i_tmp] != '\n') {
                     ++i_tmp;
                 }
                 ++i_tmp;
+                head_map[tmp1.data()] = 1;
             }
             fields_vec.push_back(tmp1.data());
             ++j;
@@ -492,8 +497,7 @@ void Table::if_select(std::vector<std::string> & fields, struct_bool_where_claus
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_bool(tmp_map, where_clause.expression)) {
-            std::cout << "str = " << str;
+        if (if_bool(head_map, tmp_map, where_clause.expression)) {
             for (int i = 0; i < field_num.size(); ++i) {
                 int j = 0, k = 0;
                 while (j <= field_num[i]) {
@@ -748,7 +752,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         str += '\n';
         int j = 0;
         i_tmp = 0;
-        while (str[i_tmp] < str.size()) {
+        while (i_tmp < str.size()) {
             tmp.clear();
             while (str[i_tmp] != ' ' && str[i_tmp] != '\n') {
                 tmp += str[i_tmp];
@@ -819,6 +823,8 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             }
             str_tmp += '\n';
             fputs(str_tmp.data(), tmp_file);
+        } else {
+            fputs(str.data(), tmp_file);
         }
     }
 
@@ -945,6 +951,8 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             }
             str_tmp += '\n';
             fputs(str_tmp.data(), tmp_file);
+        } else {
+            fputs(str.data(), tmp_file);
         }
     }
 
@@ -964,6 +972,7 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
 void Table::if_update(std::string & field, std::vector<std::string> & expression, struct_bool_where_clause & where_clause, std::string & response) {
     std::string head, tmp, tmp1;
     FILE* tmp_file = std::tmpfile();
+    std::unordered_map<std::string, int> head_map;
     std::getline(file, head);
     head += '\n';
     fputs(head.data(), tmp_file);
@@ -987,11 +996,13 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
         ++k;
         if (head[k] == 'L') {
             k += 2;
+            head_map[tmp1.data()] = -1;
         } else {
             while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
+            head_map[tmp1.data()] = 1;
         }
         fields_vec.push_back(tmp1.data());
         if (strcmp(tmp1.data(), field.data()) == 0){
@@ -1025,9 +1036,12 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_bool(tmp_map, where_clause.expression)) {
+        if (if_bool(head_map, tmp_map, where_clause.expression)) {
             for (const std::string & item : expression) {
                 if (isalpha(item[0]) || item[0] == '_') {
+                    if (tmp_map.find(item) == tmp_map.end()) {
+                        throw std::logic_error("No such field");
+                    }
                     tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
                 } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
                     tmp_stack.push(strtol(item.data(), nullptr, 10));
@@ -1071,6 +1085,8 @@ void Table::if_update(std::string & field, std::vector<std::string> & expression
             }
             str_tmp += '\n';
             fputs(str_tmp.data(), tmp_file);
+        } else {
+            fputs(str.data(), tmp_file);
         }
     }
 
@@ -1170,7 +1186,7 @@ void Table::if_delete(struct_like_where_clause & where_clause, std::string & res
                 ++k;
             }
         }
-        if (if_like(tmp, 0, where_clause.sample_string, 0) ^ where_clause.use_not) {
+        if (!if_like(tmp, 0, where_clause.sample_string, 0) ^ where_clause.use_not) {
             fputs(str.data(), tmp_file);
         }
     }
@@ -1243,8 +1259,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num) ^ where_clause.use_not) {
-            str += '\n';
+        if (!if_in(tmp_map, where_clause.expression, where_clause.list_consts_str, where_clause.list_consts_num) ^ where_clause.use_not) {
             fputs(str.data(), tmp_file);
         }
     }
@@ -1264,6 +1279,7 @@ void Table::if_delete(struct_in_where_clause & where_clause, std::string & respo
 void Table::if_delete(struct_bool_where_clause & where_clause, std::string & response) {
     std::string head, tmp, tmp1;
     FILE* tmp_file = std::tmpfile();
+    std::unordered_map<std::string, int> head_map;
     std::getline(file, head);
     head += '\n';
     fputs(head.data(), tmp_file);
@@ -1286,11 +1302,13 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
         ++k;
         if (head[k] == 'L') {
             k += 2;
+            head_map[tmp1.data()] = -1;
         } else {
             while (head[k] != ' ' && head[k] != '\n') {
                 ++k;
             }
             ++k;
+            head_map[tmp1.data()] = 1;
         }
         fields_vec.push_back(tmp1.data());
         ++j;
@@ -1317,8 +1335,7 @@ void Table::if_delete(struct_bool_where_clause & where_clause, std::string & res
             tmp_map[fields_vec[k]] = tmp;
             ++k;
         }
-        if (if_bool(tmp_map, where_clause.expression)) {
-            str += '\n';
+        if (!if_bool(head_map, tmp_map, where_clause.expression)) {
             fputs(str.data(), tmp_file);
         }
     }
@@ -1436,81 +1453,128 @@ bool Table::if_like(std::string & str, int i_str, std::string & sample_string, i
             ++i_smpl_str;
         }
     }
-    if (i_str == len_str && i_smpl_str == len_smpl_str) {
-        return true;
-    } else {
-        return false;
-    }
+    return i_str == len_str && i_smpl_str == len_smpl_str;
 }
 
 bool Table::if_in(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression, std::vector<std::string> & list_consts_str, std::vector<long> & list_consts_num) {
-    std::stack<long> tmp_stack;
-    for (const std::string & item : expression) {
-        if (isalpha(item[0]) || item[0] == '_') {
-            tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
-        } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
-            tmp_stack.push(strtol(item.data(), nullptr, 10));
-        } else if (item == "+") {
-            long op2 = tmp_stack.top();
-            tmp_stack.pop();
-            long op1 = tmp_stack.top();
-            tmp_stack.pop();
-            tmp_stack.push(op1 + op2);
-        } else if (item == "-") {
-            long op2 = tmp_stack.top();
-            tmp_stack.pop();
-            long op1 = tmp_stack.top();
-            tmp_stack.pop();
-            tmp_stack.push(op1 - op2);
-        } else if (item == "*") {
-            long op2 = tmp_stack.top();
-            tmp_stack.pop();
-            long op1 = tmp_stack.top();
-            tmp_stack.pop();
-            tmp_stack.push(op1 * op2);
-        } else if (item == "/") {
-            long op2 = tmp_stack.top();
-            tmp_stack.pop();
-            long op1 = tmp_stack.top();
-            tmp_stack.pop();
-            tmp_stack.push(op1 / op2);
+    if (list_consts_str.size() > 0) {
+        if (expression.back().front() == '\'') {
+            return std::find(list_consts_str.begin(), list_consts_str.end(), expression.back()) != list_consts_str.end();
+        } else if (isalpha(expression[0][0]) || expression[0][0] == '_') {
+            if (tmp_map.find(expression.back()) == tmp_map.end()) {
+                throw std::logic_error("No such field");
+            }
+            return std::find(list_consts_str.begin(), list_consts_str.end(), tmp_map[expression.back()]) != list_consts_str.end();
         } else {
-            long op2 = tmp_stack.top();
-            tmp_stack.pop();
-            long op1 = tmp_stack.top();
-            tmp_stack.pop();
-            tmp_stack.push(op1 % op2);
+            throw std::logic_error("Wrong argument");
         }
     }
-    long tmp = tmp_stack.top();
-    tmp_stack.pop();
-    if (std::find(list_consts_num.begin(), list_consts_num.end(), tmp) != list_consts_num.end()) {
-        return true;
-    } else if (std::find(list_consts_str.begin(), list_consts_str.end(), std::to_string(tmp)) != list_consts_str.end()) {
-        return true;
-    } else {
-        return false;
+    else {
+        std::stack<long> tmp_stack;
+        for (const std::string & item : expression) {
+            if (isalpha(item[0]) || item[0] == '_') {
+                if (tmp_map.find(item) == tmp_map.end()) {
+                    throw std::logic_error("No such field");
+                }
+                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+            } else if (isdigit(item[0]) || (item[0] == '+' && item.size() > 1) || (item[0] == '-' && item.size() > 1)) {
+                tmp_stack.push(strtol(item.data(), nullptr, 10));
+            } else if (item == "+") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 + op2);
+            } else if (item == "-") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 - op2);
+            } else if (item == "*") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 * op2);
+            } else if (item == "/") {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 / op2);
+            } else {
+                long op2 = tmp_stack.top();
+                tmp_stack.pop();
+                long op1 = tmp_stack.top();
+                tmp_stack.pop();
+                tmp_stack.push(op1 % op2);
+            }
+        }
+        long tmp = tmp_stack.top();
+        tmp_stack.pop();
+        return std::find(list_consts_num.begin(), list_consts_num.end(), tmp) != list_consts_num.end();
     }
+    throw std::logic_error("Bad input");
 }
 
-bool Table::if_bool(std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression) {
+bool Table::if_bool(std::unordered_map<std::string, int> & head_map, std::unordered_map<std::string, std::string> & tmp_map, std::vector<std::string> & expression) {
     std::stack<long> tmp_stack;
+    std::stack<std::string> tmp_stack_str;
+    bool type;
     bool flag = true;
     for (const std::string & item : expression) {
         if (flag && (item != "AND") && (item != "OR") && (item != "NOT")) {
             if (isalpha(item[0]) || item[0] == '_') {
-                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
-            } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1)) {
-                std::cout << item.data() << std::endl;
-                tmp_stack.push(strtol(item.data(), nullptr, 10));
+                if (head_map.find(item) == head_map.end()) {
+                    throw std::logic_error("No such field");
+                }
+                if (head_map[item] == -1) {
+                    type = true;
+                    tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+                } else {
+                    type = false;
+                    tmp_stack_str.push(tmp_map[item].data());
+                }
+            } else  {
+                if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1)) {
+                    type = true;
+                    tmp_stack.push(strtol(item.data(), nullptr, 10));
+                } else {
+                    type = false;
+                    tmp_stack_str.push(item.data());
+                }
             }
             flag = false;
         } else {
             if (((isalpha(item[0])) && (item != "AND") && (item != "OR") && (item != "NOT")) || (item[0] == '_')) {
-                tmp_stack.push(strtol(tmp_map[item].data(), nullptr, 10));
+                if (head_map.find(item) == head_map.end()) {
+                    throw std::logic_error("No such field");
+                }
+                if (type) {
+                    if (head_map[item] == 1) {
+                        throw std::logic_error("Wrong argument");
+                    }
+                    tmp_stack.push(std::strtoll(tmp_map[item].data(), nullptr, 10));
+                }
+                else {
+                    if (head_map[item] == -1) {
+                        throw std::logic_error("Wrong argument");
+                    }
+                    tmp_stack_str.push(tmp_map[item]);
+                }
             } else if (isdigit(item[0]) || (item[0] == '-' && item.size() > 1) || (item[0] == '+' && item.size() > 1) || item[0] == '\'') {
-                std::cout << item.data() << std::endl;
-                tmp_stack.push(strtol(item.data(), nullptr, 10));
+                if (type) {
+                    if (item.front() == '\'') {
+                        throw std::logic_error("Wrong argument");
+                    }
+                    tmp_stack.push(std::strtoll(item.data(), nullptr, 10));
+                } else {
+                    if (item.front() != '\'') {
+                        throw std::logic_error("Wrong argument");
+                    }
+                    tmp_stack_str.push(item.data());
+                }
             } else if (item == "+") {
                 long op2 = tmp_stack.top();
                 tmp_stack.pop();
@@ -1558,51 +1622,98 @@ bool Table::if_bool(std::unordered_map<std::string, std::string> & tmp_map, std:
                 tmp_stack.pop();
                 tmp_stack.push(!op);
             } else if (item == "=") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 == op2);
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 == op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 == op2);
+                }
                 flag = true;
             } else if (item == ">") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 > op2);
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 > op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 > op2);
+                }
                 flag = true;
             } else if (item == "<") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 < op2);
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 < op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 < op2);
+                }
                 flag = true;
             } else if (item == ">=") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 >= op2);
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 >= op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 >= op2);
+                }
                 flag = true;
             } else if (item == "<=") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 <= op2);
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 <= op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 <= op2);
+                }
                 flag = true;
-            } else if (item == "!=") {
-                long op2 = tmp_stack.top();
-                tmp_stack.pop();
-                long op1 = tmp_stack.top();
-                tmp_stack.pop();
-                tmp_stack.push(op1 != op2);
+            } else {
+                if (tmp_stack_str.size() == 2) {
+                    std::string op2 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    std::string op1 = tmp_stack_str.top();
+                    tmp_stack_str.pop();
+                    tmp_stack.push(op1 != op2);
+                } else {
+                    long op2 = tmp_stack.top();
+                    tmp_stack.pop();
+                    long op1 = tmp_stack.top();
+                    tmp_stack.pop();
+                    tmp_stack.push(op1 != op2);
+                }
                 flag = true;
             }
         }
     }
-    std::cout << "tmp_stack.top() = " << tmp_stack.top() << std::endl;
     return tmp_stack.top();
 }
 
