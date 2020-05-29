@@ -1,9 +1,11 @@
 SQl-интерпретатор
 Реализован 1 вариант задачи.
 Компиляция происходит по команде make. Компиляция сервера по data-server, компиляция клиента по data-client.
-Работают все команды из методички.
+Запуск сервер по команде './server'.
+Запуск клиента по команде './client'.
 
 SQl interpreter
 Implemented 1 version of the problem.
 Compilation takes place with the make command. Compiling the server by data-server, compiling the client by data-client.
-All teams from manuals are working.
+Starting the server with the command './server'.
+Starting the client with the command './client'.
